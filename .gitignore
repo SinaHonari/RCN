@@ -1,0 +1,26 @@
+# ignore generated pyc files
+*.pyc
+
+# ignore .sw files
+*.swo
+*.swp
+*.swn
+*.swm
+
+#ignore cluster job runs
+jobs_list_*
+.DS_Store
+
+# ignore latex tmp files
+*.tex~
+*.aux
+*.bbl
+*.blg
+*.brf
+*.log
+*.pdf
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
