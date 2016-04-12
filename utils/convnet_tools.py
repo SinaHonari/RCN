@@ -267,7 +267,7 @@ def create_TCDCN_obejct(pkl_param_file, dset='MTFL', create_object=True):
             from RCN.models.SumNet_MTFL import TCDCN_ConvNet
         elif paral_conv == 2:
             from RCN.models.SumNet_300W import TCDCN_ConvNet
-        elif paral_conv in == 3:
+        elif paral_conv == 3:
             from RCN.models.RCN_MTFL import TCDCN_ConvNet
         elif paral_conv == 4:
             from RCN.models.RCN_MTFL_skip import TCDCN_ConvNet

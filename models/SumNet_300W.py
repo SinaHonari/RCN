@@ -10,12 +10,12 @@ import sys
 sys.setrecursionlimit(2000)
 import RCN
 from RCN.utils.grad_updates import Train_alg
-from RCN.preprocessing.tools import (EOF, padRatio_to_pixels,
-           limit_x, discretise_y, mask_padded_kpts, get_bound_mask)
+from RCN.preprocessing.tools import (EOF, padRatio_to_pixels, limit_x,
+                                     discretise_y, mask_padded_kpts, get_bound_mask)
 from RCN.utils.bilinear import bilinear_weights
 from RCN.preprocessing.local_contrast_normalization import lcn
 from RCN.models.layers import (LogisticRegression, ConvPoolLayer,
-            NadeLayer, HiddenLayer, Softmax, PoolLayer)
+                               HiddenLayer, Softmax, PoolLayer)
 import os
 
 source_dir = os.path.dirname(RCN.__file__)
@@ -23,9 +23,9 @@ dest_dir = source_dir + '/models/exp_shared_conv'
 
 
 def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
-                   use_res_2=False, use_res_1=False, bilinear=False, weight_per_pixel=False,
-                   extra_fine=False, bch_norm=False, coarse_conv_size=3, conv_per_kpt=False,
-                   linear_conv_per_kpt=False, **kwargs):
+                   use_res_2=False, bilinear=False, weight_per_pixel=False,
+                   extra_fine=False, bch_norm=False, coarse_conv_size=3,
+                   conv_per_kpt=False, linear_conv_per_kpt=False, **kwargs):
 
     ############################
     # building the conv layers #
@@ -784,17 +784,10 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
                                layerD1.params + layerS1.params + layerS2.params +\
                                layerF1.params + layerF2.params + layerF3.params
 
-    if use_res_2 or use_res_1:
+    if use_res_2:
         params_common += layerSh6.params
         params_branch += layerT1.params + layerT2.params
         params_branch_no_output += layerT1.params + layerT2.params
-
-    """
-    if use_res_1:
-        params_common += layerSh7.params
-        params_branch += layerO1.params + layerO2.params
-        params_branch_no_output += layerO1.params + layerO2.params
-    """
 
     if extra_fine:
         params_branch += layerF4.params + layerF5.params
@@ -814,15 +807,9 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
                     (layerC1.W ** 2).sum() + (layerC2.W ** 2).sum() + (layerD1.W ** 2).sum() +\
                     (layerS1.W ** 2).sum() + (layerS2.W ** 2).sum()
 
-    if use_res_2 or use_res_1:
+    if use_res_2:
         L2_sqr_common += (layerSh6.W ** 2).sum()
         L2_sqr_branch += (layerT1.W ** 2).sum() + (layerT2.W ** 2).sum()
-
-    """
-    if use_res_1:
-        L2_sqr_common += (layerSh7.W ** 2).sum()
-        L2_sqr_branch += (layerO1.W ** 2).sum() + (layerO2.W ** 2).sum()
-    """
 
     if extra_fine:
         L2_sqr_branch += (layerF4.W ** 2).sum() + (layerF5.W ** 2).sum()
@@ -833,9 +820,9 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
 class TCDCN_ConvNet(object):
     def __init__(self, learning_rate, use_ada_delta, decay, train_cost, num_img_channels, nkerns,
                  param_seed, mask_MTFL_layer, mask_300W_layer, use_lcn, target_dim=80,
-                 bilinear=False, bch_norm=False, use_res_2=False, use_res_1=False,
-                 extra_fine=False, coarse_conv_size=3, conv_per_kpt=False,
-                 linear_conv_per_kpt=False, weight_per_pixel=False, **kwargs):
+                 bilinear=False, bch_norm=False, use_res_2=False, extra_fine=False,
+                 coarse_conv_size=3, conv_per_kpt=False, linear_conv_per_kpt=False,
+                 weight_per_pixel=False, **kwargs):
         ######################
         # BUILD ACTUAL MODEL #
         ######################
@@ -845,8 +832,6 @@ class TCDCN_ConvNet(object):
         sys.stderr.write("number of channels is %i\n" %num_img_channels)
         if use_res_2:
             sys.stderr.write("using conv up to resolution 2\n")
-        if use_res_1:
-            sys.stderr.write("using conv up to resolution 1\n")
 
         rng = np.random.RandomState(param_seed)
         sys.stderr.write("rng seed for parameter initialization is %i\n" %param_seed)
@@ -922,10 +907,9 @@ class TCDCN_ConvNet(object):
         conv_sum, softmax_layer, params, params_no_output, L2_sqr_common, L2_sqr_branch = fforward_model(
             layer1_input=layer1_input, dropout=dropout, bch_norm=bch_norm,
             nkerns=nkerns, num_img_channels=num_img_channels, dim=dim, rng=rng,
-            use_res_2=use_res_2, use_res_1=use_res_1, bilinear=bilinear,
-            coarse_conv_size=coarse_conv_size, conv_per_kpt=conv_per_kpt,
-            linear_conv_per_kpt=linear_conv_per_kpt, weight_per_pixel=weight_per_pixel,
-            extra_fine=extra_fine)
+            use_res_2=use_res_2, bilinear=bilinear, coarse_conv_size=coarse_conv_size,
+            conv_per_kpt=conv_per_kpt, linear_conv_per_kpt=linear_conv_per_kpt,
+            weight_per_pixel=weight_per_pixel, extra_fine=extra_fine)
 
         self.params = params
         self.params_no_output = params_no_output
@@ -1262,10 +1246,10 @@ def append_text(file_name, text):
 
 class Train(object):
     def __init__(self, data_queue, seed_queue, nkerns, num_epochs, learning_rate, batch_size, sliding_window_lenght, task_stop_threshold,
-                 L2_coef_common, L2_coef_branch, put_gl, put_gen, put_sm, put_pose, use_ada_delta, decay, param_path,
-                 train_cost, file_suffix, num_img_channels, sets, param_seed, num_procs, Lambda_coefs, mask_MTFL, mask_300W, use_lcn,
-                 producers, sw_lenght, target_dim, bilinear, bch_norm, dropout, num_queue_elem, use_res_2, use_res_1,
-                 extra_fine, load_no_output_params, coarse_conv_size, conv_per_kpt, linear_conv_per_kpt, weight_per_pixel):
+                 L2_coef_common, L2_coef_branch, use_ada_delta, decay, param_path, train_cost, file_suffix, num_img_channels, sets,
+                 param_seed, num_procs, Lambda_coefs, mask_MTFL, mask_300W, use_lcn, producers, sw_lenght, target_dim, bilinear, bch_norm,
+                 dropout, num_queue_elem, use_res_2, extra_fine, load_no_output_params, coarse_conv_size, conv_per_kpt, linear_conv_per_kpt,
+                 weight_per_pixel):
 
         if '300W' in data_queue.keys():
             self.data_queue_300W = data_queue['300W']
@@ -1275,13 +1259,11 @@ class Train(object):
         self.seed_queue = seed_queue
         self.num_procs = num_procs
 
-        pose_mask = [put_gl, put_gen, put_sm, put_pose]
         tcdcn = TCDCN_ConvNet(learning_rate=learning_rate, use_ada_delta=use_ada_delta, decay=decay, train_cost=train_cost,
                               num_img_channels=num_img_channels, nkerns=nkerns, param_seed=param_seed, mask_MTFL_layer=mask_MTFL,
                               mask_300W_layer=mask_300W, use_lcn=use_lcn, target_dim=target_dim, bilinear=bilinear,
-                              bch_norm=bch_norm, use_res_2=use_res_2, use_res_1=use_res_1, extra_fine=extra_fine,
-                              coarse_conv_size=coarse_conv_size, conv_per_kpt=conv_per_kpt,
-                              linear_conv_per_kpt=linear_conv_per_kpt, weight_per_pixel=weight_per_pixel)
+                              bch_norm=bch_norm, use_res_2=use_res_2, extra_fine=extra_fine, coarse_conv_size=coarse_conv_size,
+                              conv_per_kpt=conv_per_kpt, linear_conv_per_kpt=linear_conv_per_kpt, weight_per_pixel=weight_per_pixel)
 
         ####################################
         # running a previously saved_model #
@@ -1301,7 +1283,6 @@ class Train(object):
 
         self.num_queue_elem = num_queue_elem
         self.EOF_used = False
-        self.pose_mask = pose_mask
         self.tcdcn = tcdcn
         self.num_epochs = num_epochs
         self.batch_size = batch_size
@@ -1534,7 +1515,6 @@ class Train(object):
         self.num_kpts_MTFL = 5
         self.num_kpts_300W = 68
 
-        pose_mask = self.pose_mask
         tcdcn = self.tcdcn
         num_epochs = self.num_epochs
         batch_size = self.batch_size
@@ -1877,53 +1857,6 @@ class Train(object):
                     epoch_err_kpt_avg = self.eval_test_set(test_set_x=setx, test_set_y=sety, is_MTFL=is_MTFL, error_dict=error_dict, epoch=epoch)
                     name = "%s_%s" %(dset, subset)
                     test_epoch_error_kpt_avg.append([name, epoch_err_kpt_avg])
-
-            #######################################
-            # getting the taks stopping threshold #
-            #######################################
-            '''
-            if epoch >= sliding_window_lenght:
-                k = sliding_window_lenght
-                # glasses early-stopping measure
-                if put_gl:
-                    med_gl_train = np.median(train_total_cost_gl[-k:])
-                    sum_gl_train = np.sum(train_total_cost_gl[-k:])
-                    first_frac = k * med_gl_train / (sum_gl_train - k * med_gl_train)
-                    min_gl_train = np.min(train_total_cost_gl)
-                    second_frac = (valid_total_cost_gl - min_gl_train) / (train_lambda_gl * min_gl_train)
-                    if first_frac * second_frac > task_stop_threshold:
-                        put_gl = False
-
-                # gender early-stopping measure
-                if put_gen:
-                    med_gen_train = np.median(train_total_cost_gen[-k:])
-                    sum_gen_train = np.sum(train_total_cost_gen[-k:])
-                    first_frac = k * med_gen_train / (sum_gen_train - k * med_gen_train)
-                    min_gen_train = np.min(train_total_cost_gen)
-                    second_frac = (valid_total_cost_gen - min_gen_train) / (train_lambda_gen * min_gen_train)
-                    if first_frac * second_frac > task_stop_threshold:
-                        put_gen = False
-
-                # smile early-stopping measure
-                if put_sm:
-                    med_sm_train = np.median(train_total_cost_sm[-k:])
-                    sum_sm_train = np.sum(train_total_cost_sm[-k:])
-                    first_frac = k * med_sm_train / (sum_sm_train - k * med_sm_train)
-                    min_sm_train = np.min(train_total_cost_sm)
-                    second_frac = (valid_total_cost_sm - min_sm_train) / (train_lambda_sm * min_sm_train)
-                    if first_frac * second_frac > task_stop_threshold:
-                        put_sm = False
-
-                # pose early-stopping measure
-                if put_pose:
-                    med_pose_train = np.median(train_total_cost_pose[-k:])
-                    sum_pose_train = np.sum(train_total_cost_pose[-k:])
-                    first_frac = k * med_pose_train / (sum_pose_train - k * med_pose_train)
-                    min_pose_train = np.min(train_total_cost_pose)
-                    second_frac = (valid_total_cost_pose - min_pose_train) / (train_lambda_pose * min_pose_train)
-                    if first_frac * second_frac > task_stop_threshold:
-                        put_pose = False
-            '''
 
             if epoch == 1 :
                  sys.stderr.write("done with the first epochs of valid and train\n")

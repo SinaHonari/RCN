@@ -13,8 +13,8 @@ from RCN.utils.grad_updates import Train_alg
 from RCN.preprocessing.tools import EOF
 from RCN.utils.bilinear import bilinear_weights
 from RCN.preprocessing.local_contrast_normalization import lcn
-from RCN.models.layers import LogisticRegression, ConvPoolLayer,\
-                                          NadeLayer, HiddenLayer, Softmax, PoolLayer
+from RCN.models.layers import (LogisticRegression, ConvPoolLayer,
+                               HiddenLayer, Softmax, PoolLayer)
 import os
 
 source_dir = os.path.dirname(RCN.__file__)
@@ -1895,7 +1895,7 @@ class Train(object):
             valid_set = Valid_error[subset]
             best_params = valid_set['best_params']
             min_cost_kpt_epoch = valid_set['min_cost_kpt_epoch']
-            params_pickle_name = params_pickle_base + '_epoch_' + str(min_cost_kpt_epoch) + file_suffix + '_' + subset + '.pickle'
+            params_pickle_name = params_pickle_base + file_suffix + '_' + subset + '.pickle'
             dump_params(params_pickle_name, best_params)
 
         # dumping the adadelta params at the end of training for the last epoch

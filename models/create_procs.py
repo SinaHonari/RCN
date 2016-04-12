@@ -366,13 +366,13 @@ def load_preproc_initProcs(mask_MTFL, mask_300W, all_train, scale_mul, translate
 def train_convNet(nkerns, num_epochs, learning_rate, batch_size, sliding_window_lenght, task_stop_threshold, L2_coef,
                   L2_coef_out, L2_coef_ful, use_ada_delta, decay, param_path, train_cost, gray_scale, scale_mul,
                   translate_mul, param_seed, Lambda_coefs, file_suffix, mask_MTFL, mask_300W, use_lcn, dist_ratio,
-                  sw_lenght, all_train, paral_conv, target_dim, bilinear, mask_branch, coarse_conv_size,
+                  sw_lenght, all_train, paral_conv, target_dim, bilinear, coarse_conv_size, only_fine_tune_struc,
                   coarse_mask_branch, block_img, fixed_block, bch_norm, dropout, rotation, denoise_conv,
                   param_path_cfNet, nMaps_shuffled, use_res_2, use_res_1, extra_fine, large_F_filter,
                   load_no_output_params, save_no_output_params, train_all_kpts, dropout_kpts, num_model_kpts,
                   conv_size, param_path_strucNet, weight_per_pixel, no_fine_tune_model, conv_per_kpt,
                   linear_conv_per_kpt, only_49_kpts, concat_pool_locations, zero_non_pooled, num_procs,
-                  only_fine_tune_struc, learn_upsampling):
+                  learn_upsampling):
 
     sets, producers, data_queue, seed_queue, NUMBER_OF_PROCESSES, start_time, num_queue_elem = load_preproc_initProcs(
                                     mask_MTFL=mask_MTFL, mask_300W=mask_300W, all_train=all_train,
@@ -411,9 +411,9 @@ def train_convNet(nkerns, num_epochs, learning_rate, batch_size, sliding_window_
                        train_cost=train_cost, file_suffix=file_suffix, num_img_channels=num_img_channels, sets=sets, param_seed=param_seed,
                        num_procs=NUMBER_OF_PROCESSES, Lambda_coefs=Lambda_coefs, mask_MTFL=mask_MTFL, mask_300W=mask_300W, use_lcn=use_lcn,
                        producers=producers, sw_lenght=sw_lenght, target_dim=target_dim, bilinear=bilinear, bch_norm=bch_norm, dropout=dropout,
-                       num_queue_elem=num_queue_elem, use_res_2=use_res_2, use_res_1=use_res_1, extra_fine=extra_fine,
-                       load_no_output_params=load_no_output_params, coarse_conv_size=coarse_conv_size, conv_per_kpt=conv_per_kpt,
-                       linear_conv_per_kpt=linear_conv_per_kpt, weight_per_pixel=weight_per_pixel)
+                       num_queue_elem=num_queue_elem, use_res_2=use_res_2, extra_fine=extra_fine, load_no_output_params=load_no_output_params,
+                       coarse_conv_size=coarse_conv_size, conv_per_kpt=conv_per_kpt, linear_conv_per_kpt=linear_conv_per_kpt,
+                       weight_per_pixel=weight_per_pixel)
         elif paral_conv == 3.0:
             sys.stderr.write('training RCN_MTFL\n')
             from RCN.models.RCN_MTFL import Train
@@ -424,7 +424,7 @@ def train_convNet(nkerns, num_epochs, learning_rate, batch_size, sliding_window_
                        num_procs=NUMBER_OF_PROCESSES, Lambda_coefs=Lambda_coefs, mask_MTFL=mask_MTFL, mask_300W=mask_300W, use_lcn=use_lcn,
                        producers=producers, sw_lenght=sw_lenght, target_dim=target_dim, bilinear=bilinear, bch_norm=bch_norm,
                        dropout=dropout, num_queue_elem=num_queue_elem, extra_fine=extra_fine, save_no_output_params=save_no_output_params,
-                       conv_size=conv_size, use_res_2=use_res_2, use_res_1=use_res_1)
+                       coarse_conv_size=coarse_conv_size, use_res_2=use_res_2, use_res_1=use_res_1)
         elif paral_conv == 4.0:
             sys.stderr.write('training RCN_MTFL_skip\n')
             from RCN.models.RCN_MTFL_skip import Train
@@ -434,8 +434,8 @@ def train_convNet(nkerns, num_epochs, learning_rate, batch_size, sliding_window_
                        train_cost=train_cost, file_suffix=file_suffix, num_img_channels=num_img_channels, sets=sets, param_seed=param_seed,
                        num_procs=NUMBER_OF_PROCESSES, Lambda_coefs=Lambda_coefs, mask_MTFL=mask_MTFL, mask_300W=mask_300W, use_lcn=use_lcn,
                        producers=producers, sw_lenght=sw_lenght, target_dim=target_dim, bilinear=bilinear, bch_norm=bch_norm, dropout=dropout,
-                       num_queue_elem=num_queue_elem, extra_fine=extra_fine, save_no_output_params=save_no_output_params, conv_size=conv_size,
-                       use_res_2=use_res_2, use_res_1=use_res_1)
+                       num_queue_elem=num_queue_elem, extra_fine=extra_fine, save_no_output_params=save_no_output_params,
+                       coarse_conv_size=coarse_conv_size, use_res_2=use_res_2, use_res_1=use_res_1)
         elif paral_conv == 5.0:
             sys.stderr.write('training RCN_300W\n')
             from RCN.models.RCN_300W import Train
@@ -474,12 +474,12 @@ def train_convNet(nkerns, num_epochs, learning_rate, batch_size, sliding_window_
             from RCN.models.fine_tune_cfNet_structured import Train
             tr = Train(data_queue=data_queue, seed_queue=seed_queue, nkerns=nkerns, num_epochs=num_epochs, batch_size=batch_size,
                        L2_coef=L2_coef, param_path=param_path, file_suffix=file_suffix, sets=sets, param_seed=param_seed,
-                       num_procs=NUMBER_OF_PROCESSES, mask_MTFL=mask_MTFL, mask_300W=mask_300W, nMaps_shuffled=nMaps_shuffled,
-                       producers=producers, sw_lenght=sw_lenght, target_dim=target_dim, num_queue_elem=num_queue_elem, use_lcn=use_lcn,
-                       param_path_cfNet=param_path_cfNet, param_path_strucNet=param_path_strucNet, decay=decay, train_all_kpts=train_all_kpts,
-                       dropout_kpts=dropout_kpts, num_model_kpts=num_model_kpts, conv_size=conv_size, num_img_channels=num_img_channels,
-                       no_fine_tune_model=no_fine_tune_model, only_49_kpts=only_49_kpts,
-                       only_fine_tune_struc=only_fine_tune_struc)
+                       num_procs=NUMBER_OF_PROCESSES, mask_MTFL=mask_MTFL, mask_300W=mask_300W, producers=producers,
+                       sw_lenght=sw_lenght, target_dim=target_dim, num_queue_elem=num_queue_elem, use_lcn=use_lcn,
+                       param_path_cfNet=param_path_cfNet, param_path_strucNet=param_path_strucNet, decay=decay,
+                       train_all_kpts=train_all_kpts, dropout_kpts=dropout_kpts, num_model_kpts=num_model_kpts,
+                       conv_size=conv_size, num_img_channels=num_img_channels, no_fine_tune_model=no_fine_tune_model,
+                       only_49_kpts=only_49_kpts, only_fine_tune_struc=only_fine_tune_struc)
 
     message = tr.train()
 
@@ -503,7 +503,7 @@ def get_nkerns(paral_conv=0.0, denoise_conv=0.0, **kwargs):
     SumNet_300W = [68, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64]
     RCN_MTFL = [5, 16, 32, 48, 48, 48, 48, 32, 32, 16, 16, 48, 48, 48]
     RCN_300W = [68, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64]
-    Denoising_300W = [5, 16, 16, 16]
+    Denoising_300W = [68, 64, 64, 64]
 
     if paral_conv == 1:
         nkerns = SumNet_MTFL
@@ -540,7 +540,7 @@ if __name__ == '__main__':
 
     # the default learning_rate in TCDCN paper is 0.003
     parser.add_argument('--learning_rate', type=float, default=0.003)
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--sliding_window_lenght', type=int, default=200)
 
     # the default task_stop_threshold in TCDCN paper is 0.5
@@ -572,7 +572,7 @@ if __name__ == '__main__':
     # complete pickle path to the param_file of the structured keypoint detection model
     parser.add_argument('--param_path_strucNet', type=str, default="")
 
-    parser.add_argument('--nMaps_shuffled', type=int, help='the number of channels to be shuffled for each sample',default=0)
+    parser.add_argument('--nMaps_shuffled', type=int, help='the number of channels to be shuffled for each sample',default=35)
 
     # keypoint locations normalized by the inter-ocular distance
     parser.add_argument('--cost', choices=['cost_kpt', 'error_kpt_avg', 'cross_entropy'], default='cost_kpt')
@@ -588,9 +588,6 @@ if __name__ == '__main__':
 
     # setting the seed for parameters initialization
     parser.add_argument('--param_seed', type=int, default=54621)
-
-    parser.add_argument('--mask_MTFL', type=float, help='indicating whether to use MTFL dataset or not', choices=[0.0, 1.0], default=1.0)
-    parser.add_argument('--mask_300W', type=float, help='indicating whether to use 300W dataset or not', choices=[0.0, 1.0], default=1.0)
 
     parser.add_argument('--use_lcn', help='indicates whether to use lcn or not', action='store_true', default=False)
 
@@ -612,7 +609,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--bilinear', help='indicates whether to use bilinear interpolation for upsampling or just repeating values ', action='store_true', default=False)
 
-    # the mask_branch is from the finest to the coarsest layer, namely [F, M, C, D]
     parser.add_argument('--coarse_mask_branch', help='a string of four values (only 0 and 1) seperated by comma, starting from F going to S', type=str, default="1,1,1,1,1")
 
     parser.add_argument('--coarse_conv_size', type=int, help='conv_size of the coarset branch of conv models', default=3)
@@ -622,7 +618,7 @@ if __name__ == '__main__':
     parser.add_argument('--bch_norm', help='indicates whether to use batch_normalization in convnet or not', action='store_true', default=False)
     parser.add_argument('--dropout', help='indicates whether to use dropout in convnet or not', action='store_true', default=False)
 
-    parser.add_argument('--rotation', type=int, help='the max rotationation for preprocessing', default=10)
+    parser.add_argument('--rotation', type=int, help='the max rotationation for preprocessing', default=40)
     parser.add_argument('--use_res_2', help='indicates whether to use 2by2 branch resolution or not', action='store_true', default=False)
     parser.add_argument('--use_res_1', help='indicates whether to use up to 1by1 branch resolution or not', action='store_true', default=False)
     parser.add_argument('--extra_fine', help='indicates whether to use extra fine layer in RCN_300W or not', action='store_true', default=False)
@@ -634,7 +630,7 @@ if __name__ == '__main__':
     parser.add_argument('--dropout_kpts', help='indicates to masks the random selected keypoint when training the structured model', action='store_true', default=False)
 
     parser.add_argument('--num_model_kpts', help='the number of cfNet keypoints to be used when building the structured model', type=int, default=68)
-    parser.add_argument('--conv_size', type=int, help='conv_size of the strucutured kpt model', default=5)
+    parser.add_argument('--conv_size', type=int, help='conv_size of the strucutured kpt model', default=45)
     parser.add_argument('--weight_per_pixel', help='indicates whether to use a per-pixel weight (in each branch for each kpt)\
                            in mscale_conv model or not', action='store_true', default=False)
     parser.add_argument('--conv_per_kpt', help='indicates whether to use a convnet on all branch feature maps per keypoint\
@@ -659,6 +655,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     paral_conv = args.paral_conv
+    print "paral_conv is %s" %(paral_conv,)
 
     ###########################
     # printing out the values #
@@ -750,9 +747,16 @@ if __name__ == '__main__':
     translate_mul = args.translate_mul
     print "translate_mul is %f" %translate_mul
 
-    mask_MTFL = args.mask_MTFL
+    denoise_conv = args.denoise_conv
+    print "denoise_conv is %s" %(denoise_conv,)
+
+    if paral_conv in [2, 5, 6] or denoise_conv in [1, 2]:
+        mask_MTFL = 0
+        mask_300W = 1
+    elif paral_conv in [1, 3, 4]:
+        mask_300W = 0
+        mask_MTFL = 1
     print "mask_MTFL is %f " %mask_MTFL
-    mask_300W = args.mask_300W
     print "mask_300W is %f " %mask_300W
 
     use_lcn = args.use_lcn
@@ -764,25 +768,12 @@ if __name__ == '__main__':
     dist_ratio = args.dist_ratio
     print "dist_ratio is %f" %dist_ratio
 
-    denoise_conv = args.denoise_conv
-    print "denoise_conv is %s" %(denoise_conv,)
-
     # if sw is given, use the given value
     # else set it to 10% of the num_epochs
     sw = args.sw
     if sw == -1:
         sw = num_epochs / 10
     print "The sw_lenght is %s" %(sw,)
-
-    print "paral_conv is %s" %(paral_conv,)
-
-    br_mask = args.mask_branch
-    br_mask = br_mask.split(',')
-    br_mask = map(string.strip, br_mask)
-    br_mask = map(int, br_mask)
-    assert all(x==0 or x==1 for x in br_mask)
-    mask_branch = np.array(br_mask)
-    print "The mask_branch for mscale_conv is %s" %(mask_branch,)
 
     br_mask = args.coarse_mask_branch
     br_mask = br_mask.split(',')
@@ -903,9 +894,9 @@ if __name__ == '__main__':
                             scale_mul=scale_mul, translate_mul=translate_mul, param_seed=param_seed, Lambda_coefs=Lambda_coefs,
                             file_suffix=file_suffix, mask_MTFL=mask_MTFL, mask_300W=mask_300W, use_lcn=use_lcn,
                             dist_ratio=dist_ratio, sw_lenght=sw, all_train=all_train, paral_conv=paral_conv,
-                            target_dim=target_dim, bilinear=bilinear, mask_branch=mask_branch, coarse_conv_size=coarse_conv_size,
-                            coarse_mask_branch=coarse_mask_branch, block_img=block_img, fixed_block=fixed_block, bch_norm=bch_norm,
-                            dropout=dropout, rotation=rotation, denoise_conv=denoise_conv, learn_upsampling=learn_upsampling
+                            target_dim=target_dim, bilinear=bilinear, coarse_conv_size=coarse_conv_size, block_img=block_img,
+                            coarse_mask_branch=coarse_mask_branch, fixed_block=fixed_block, bch_norm=bch_norm,
+                            dropout=dropout, rotation=rotation, denoise_conv=denoise_conv, learn_upsampling=learn_upsampling,
                             param_path_cfNet=param_path_cfNet, nMaps_shuffled=nMaps_shuffled, only_49_kpts=only_49_kpts,
                             use_res_2=use_res_2, use_res_1=use_res_1, extra_fine=extra_fine, load_no_output_params=load_no_output_params,
                             large_F_filter=large_F_filter, save_no_output_params=save_no_output_params, train_all_kpts=train_all_kpts,

@@ -13,8 +13,8 @@ from RCN.utils.grad_updates import Train_alg
 from RCN.preprocessing.tools import EOF
 from RCN.utils.bilinear import bilinear_weights
 from RCN.preprocessing.local_contrast_normalization import lcn
-from RCN.models.layers import LogisticRegression, ConvPoolLayer,\
-                                          NadeLayer, HiddenLayer, Softmax, PoolLayer
+from RCN.models.layers import (LogisticRegression, ConvPoolLayer,
+                               HiddenLayer, Softmax, PoolLayer)
 import os
 
 source_dir = os.path.dirname(RCN.__file__)
@@ -23,7 +23,7 @@ dest_dir = source_dir + '/models/exp_shared_conv'
 class TCDCN_ConvNet(object):
     def __init__(self, learning_rate, use_ada_delta, decay, train_cost, num_img_channels, nkerns,\
                  param_seed, mask_MTFL_layer, mask_300W_layer, use_lcn, target_dim=80,\
-                 bilinear=True, bch_norm=False, extra_fine=False, conv_size=5,\
+                 bilinear=True, bch_norm=False, extra_fine=False, coarse_conv_size=3,\
                  use_res_2=False, use_res_1=False, **kwargs):
         ######################
         # BUILD ACTUAL MODEL #
@@ -118,11 +118,11 @@ class TCDCN_ConvNet(object):
         ############################
         # building the conv layers #
         ############################
-        sys.stderr.write("conv_size is %s\n" %(conv_size,))
-        if conv_size == 5:
+        sys.stderr.write("coarse_conv_size is %s\n" %(coarse_conv_size,))
+        if coarse_conv_size == 5:
             conv_large = 5
             conv_small = 1
-        elif conv_size == 3:
+        elif coarse_conv_size == 3:
             conv_large = 3
             conv_small = 3
 
@@ -453,8 +453,7 @@ class TCDCN_ConvNet(object):
             # end branch concatenation for T #
             ##################################
             if use_res_1:
-                layerTE = T.concatenate((layerT2_output, layerO3_output), axis=1)
-                layerT3_input = layerTE
+                layerT3_input = T.concatenate((layerT2_output, layerO3_output), axis=1)
             else:
                 layerT3_input = layerT2_output
 
@@ -525,9 +524,8 @@ class TCDCN_ConvNet(object):
         ##################################
         # end branch concatenation for S #
         ##################################
-        if use_res_2:
-            layerSE = T.concatenate((layerS2_output, layerT3_output), axis=1)
-            layerS3_input = layerSE
+        if use_res_2 or use_res_1:
+            layerS3_input = T.concatenate((layerS2_output, layerT3_output), axis=1)
         else:
             layerS3_input = layerS2_output
 
@@ -1177,7 +1175,7 @@ class Train(object):
     def __init__(self, data_queue, seed_queue, nkerns, num_epochs, learning_rate, batch_size, sliding_window_lenght, task_stop_threshold,
                  L2_coef_common, L2_coef_branch, use_ada_delta, decay, param_path, save_no_output_params, use_res_2, use_res_1,
                  train_cost, file_suffix, num_img_channels, sets, param_seed, num_procs, Lambda_coefs, mask_MTFL, mask_300W, use_lcn,
-                 producers, sw_lenght, target_dim, bilinear, bch_norm, dropout, num_queue_elem, extra_fine, conv_size=5):
+                 producers, sw_lenght, target_dim, bilinear, bch_norm, dropout, num_queue_elem, extra_fine, coarse_conv_size=3):
 
         if '300W' in data_queue.keys():
             self.data_queue_300W = data_queue['300W']
@@ -1190,7 +1188,7 @@ class Train(object):
         tcdcn = TCDCN_ConvNet(learning_rate=learning_rate, use_ada_delta=use_ada_delta, decay=decay, train_cost=train_cost,
                               num_img_channels=num_img_channels, nkerns=nkerns, param_seed=param_seed, mask_MTFL_layer=mask_MTFL,
                               mask_300W_layer=mask_300W, use_lcn=use_lcn, target_dim=target_dim, bilinear=bilinear,
-                              bch_norm=bch_norm, extra_fine=extra_fine, conv_size=conv_size, use_res_2=use_res_2,
+                              bch_norm=bch_norm, extra_fine=extra_fine, coarse_conv_size=coarse_conv_size, use_res_2=use_res_2,
                               use_res_1=use_res_1)
 
         ####################################

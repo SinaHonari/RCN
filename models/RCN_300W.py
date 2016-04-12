@@ -11,15 +11,14 @@ sys.setrecursionlimit(2000)
 import RCN
 from RCN.utils.grad_updates import Train_alg
 from RCN.preprocessing.tools import (EOF, padRatio_to_pixels, limit_x,
-                                            discretise_y, mask_padded_kpts,
-                                            get_bound_mask)
+                                    discretise_y, mask_padded_kpts,
+                                    get_bound_mask)
 from RCN.utils.convnet_tools import set_one_for_nonzero
 from RCN.utils.bilinear import bilinear_weights
 from RCN.preprocessing.local_contrast_normalization import lcn
-from RCN.models.layers import (LogisticRegression, ConvPoolLayer,
-                                           NadeLayer, HiddenLayer, Softmax,
-                                           PoolLayer, PoolSameSizeLayer,
-                                           UpsamplingLayer)
+from RCN.models.layers import (LogisticRegression, ConvPoolLayer, HiddenLayer,
+                               PoolLayer, PoolSameSizeLayer, Softmax,
+                               UpsamplingLayer)
 import os
 
 source_dir = os.path.dirname(RCN.__file__)
