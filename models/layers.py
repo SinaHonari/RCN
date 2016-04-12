@@ -4,8 +4,6 @@ import numpy as np
 from theano.tensor.nnet import conv2d
 from theano.tensor.signal.pool import pool_2d, max_pool_2d_same_size
 from theano.tensor.nnet.abstract_conv import conv2d_grad_wrt_inputs
-from facepoints.nade.nade_regression import ff_layer, nade_fprop_universal, nade_predict_universal
-from facepoints.nade.nade_regression import orderless_nade_fprop_universal, orderless_nade_predict_universal
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 def apply_act(x, act=None):
@@ -458,90 +456,6 @@ class PoolSameSizeLayer(object):
         # downsample each feature map individually, using maxpooling
         pooled_out = max_pool_2d_same_size(input=input, patch_size=patch_size)
         self.output = pooled_out
-
-class NadeLayer(object):
-    def __init__(self, rng, input, output, nade_in, nade_out, hidden_act, output_act):
-        """
-        Nade layer.
-
-        :type rng: np.random.RandomState
-        :param rng: a random number generator used to initialize weights
-
-        :type input: theano.tensor.fmatrix
-        :param input: a symbolic tensor of shape (n_examples, nade_in)
-
-        :type output: theano.tensor.fmatrix
-        :param output: a symbolic tensor of shape (n_examples, nade_out)
-
-        :type nade_in: int
-        :param nade_in: dimensionality of input
-
-        :type nade_out: int
-        :param nade_out: number of hidden units
-
-        :type activation: string, one of ['sigmoid', 'tanh', 'linear', 'softmax', 'relu', 'absTanh']
-        :param activation: Non linearity to be applied in the hidden layer
-        """
-        self.input = input
-
-        self.w_nade, _ = ff_layer(rng, n_in=nade_out, n_out=nade_in)
-        self.v_nade, self.b_nade = ff_layer(rng, n_in=nade_in, n_out=nade_out)
-
-        # nade cost at train time
-        nade_out = nade_fprop_universal(output, self.b_nade, input, self.w_nade, self.v_nade, hidden_act, output_act)
-        self.output = nade_out
-
-        # nade error at test time
-        self.predict = nade_predict_universal(self.b_nade, input, self.w_nade, self.v_nade, hidden_act, output_act)
-
-        # store parameters of this layer
-        self.params = [self.w_nade, self.v_nade, self.b_nade]
-
-class RNadeLayer(object):
-    def __init__(self, rng, input, output, nade_in, nade_out, mask, ordering, hidden_act, output_act):
-        """
-        OrderLess Nade layer.
-
-        :type rng: np.random.RandomState
-        :param rng: a random number generator used to initialize weights
-
-        :type input: theano.tensor.fmatrix
-        :param input: a symbolic tensor of shape (n_examples, nade_in)
-
-        :type output: theano.tensor.fmatrix
-        :param output: a symbolic tensor of shape (n_examples, nade_out)
-
-        :type nade_in: int
-        :param nade_in: dimensionality of input
-
-        :type nade_out: int
-        :param nade_out: number of hidden units
-
-        :type mask: theano.tensor.fmatrix
-        :param mask: a mask indicating which columns per sample(row) should be masked
-        : Note: 0 values means use that column and 1 values means ignore that column
-
-        :type ordering: theano.tensor.ivector
-        :param ordering: the orders of the elemenent that nade should predict
-
-        :type activation: string, one of ['sigmoid', 'tanh', 'linear', 'softmax', 'relu', 'absTanh']
-        :param activation: Non linearity to be applied in the hidden layer
-        """
-        self.input = input
-
-        self.w_nade, _ = ff_layer(rng, n_in=nade_out, n_out=nade_in)
-        self.v_nade, self.b_nade = ff_layer(rng, n_in=nade_in, n_out=nade_out)
-        self.Wflags, _ = ff_layer(rng, nade_out, nade_in)
-
-        # nade cost at train time
-        nade_out = orderless_nade_fprop_universal(output, self.b_nade, input, self.w_nade, self.v_nade, mask, self.Wflags, hidden_act, output_act)
-        self.output = nade_out
-
-        # nade error at test time
-        self.predict = orderless_nade_predict_universal(self.b_nade, input, self.w_nade, self.v_nade, self.Wflags, ordering, hidden_act, output_act)
-
-        # store parameters of this layer
-        self.params = [self.w_nade, self.v_nade, self.b_nade, self.Wflags]
 
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, train_time, W=None, b=None,
