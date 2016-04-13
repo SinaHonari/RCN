@@ -4,9 +4,6 @@
 # model's predicted keypoints on the images.
 #
 # Note: This module draws the keypoints on the downsampled 80*80 rgb images
-#
-# inputs:
-# sys.argv[1]: the complete path to the pickle file whose weights are assigned to the convnet
 
 import numpy as np
 from RCN.models.create_procs import get_data
@@ -33,7 +30,7 @@ def tile_images(sample_num, draw_set, out_path, row_size, col_size):
     if sample_num == 6:
         rows = 1
         cols = 6
-    else: #sample_num == 20
+    else:
         rows = 4
         cols = 5
 
@@ -102,8 +99,6 @@ def drawpoints(img, kpt_conv, kpt_true, plot_colored_kpt, magnify=False):
 
         for kpt in kpt_true:
             # plotting the estimated keypoints in green
-            #cv2.circle(img,(int(kpt[0]),int(kpt[1])), 2, (0,255,0), -1)
-            #img[kpt[1], kpt[0]] = (0,255,0)
             if magnify:
                 cv2.circle(img,(int(kpt[0]),int(kpt[1])), 3, (0,255,0), -1)
             else:
@@ -112,7 +107,6 @@ def drawpoints(img, kpt_conv, kpt_true, plot_colored_kpt, magnify=False):
 
         for kpt in kpt_conv:
             # plotting the estimated keypoints in blue
-            #img[kpt[1], kpt[0]] = (0,0,255)
             if magnify:
                 cv2.circle(img,(int(kpt[0]),int(kpt[1])), 3, (0,0,255), -1)
             else:
@@ -162,47 +156,11 @@ def annotateKpts(img, kpt_conv, kpt_true):
 
     return img_new
 
-def limit_x(x, limit):
-    """
-    This module limits the values to the range of [0,limit]
-    """
-    x_gr_limit = x > limit
-    x_le_limit = x_gr_limit * limit + (1 - x_gr_limit) * x
-    x_gr_zero = x > 0.0
-    x_norm = x_gr_zero * x_le_limit
-    return x_norm
-
 def get_pickle_indices(picke_path):
     with open(pickle_path, 'rb') as fp:
         vals = pickle.load(fp)
         pickle_indices = vals['samples_vec']
     return pickle_indices, vals
-
-def discretise_y(norm_kpt, dim):
-    """
-    this method makes the y_kpt_MTFL discretized to be put to the softmax values
-
-    :type norm_kpt: numpy float matrix of shape (#batch, #kpt*2)
-    :param norm_kpt: kpt values in the range of [0,1]
-
-    :type dim: int
-    :param dim: the dimentionality of the target picture
-
-    returns: a numpy int matrix of shape (#batch, #kpt)
-             with values in the range of [0, dim**2)
-    """
-    # make sure the values fall in the range [0,1]
-    y_norm = limit_x(norm_kpt, 0.99999)   # Don't allow exactly 1
-
-    # x_pos tells how many complete column in the image has been passed
-    #x_pos = y_norm[:,::2] * dim**2
-    #x_pos = x_pos.astype(int)
-
-    # JASON PROPOSED:
-    x_pos = (y_norm[:,::2] * dim).astype(int)
-    y_pos = (y_norm[:,1::2] * dim).astype(int)
-    discrt_pos = y_pos * dim + x_pos
-    return discrt_pos
 
 def save_error_results(array, set_name, sample_num):
     array_asc = np.sort(array)[::-1]
@@ -223,17 +181,6 @@ def save_error_results(array, set_name, sample_num):
 
 def eval_test_set(tcdcn, params, set_x, set_y, set_name, sample_num, dataSet, cfNet_model):
     rng_seed  = np.random.RandomState(0)
-    """
-    if 'jitter_mul' in params.keys():
-        scale_mul = params['jitter_mul']
-        translate_mul = params['jitter_mul']
-    else:
-        scale_mul = params['scale_mul']
-        translate_mul = params['translate_mul']
-    if 'test' in set_name:
-        scale_mul = 0.0
-        translate_mul = 0.0
-    """
     scale_mul = 0.0
     translate_mul = 0.0
 
@@ -276,20 +223,6 @@ def append_orderedDict(list_of_dict):
     keys that exist in all of them.
     """
     all_sets = OrderedDict()
-    """
-    for key in list_of_dict[0].keys():
-        flag = True
-        # check if the key exists in all lists
-        for mylist in list_of_dict[1:]:
-            if key not in mylist.keys():
-                flag = False
-                break;
-        if flag:
-        # add all elements in the key
-        all_sets[key] = []
-        for mylist in list_of_dict:
-            all_sets[key].extend(mylist[key])
-    """
     for key in list_of_dict[0].keys():
         all_sets[key] = list_of_dict[0][key]
         for mylist in list_of_dict[1:]:
@@ -341,10 +274,6 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
     else:
         dataSet = '300W'
         num_kpt = 68
-
-    # setting the number of image sampels to evalute the convnet on
-    #sample_num = 6
-    #sample_num = 20
 
     ##############################################
     # getting the 1st bounding box test set data #
@@ -422,18 +351,6 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         ##############################################
         # preprocessing data
         rng_seed  = np.random.RandomState(0)
-        """
-        if 'jitter_mul' in params.keys():
-            scale_mul = params['jitter_mul']
-            translate_mul = params['jitter_mul']
-        else:
-            scale_mul = params['scale_mul']
-            translate_mul = params['translate_mul']
-        if 'test' in set:
-            scale_mul = 0.0
-            translate_mul = 0.0
-        """
-
         scale_mul = 0.0
         translate_mul = 0.0
         target_dim =  params['target_dim']
@@ -521,9 +438,6 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
 
             kpt_conv.extend(kpt_conv_batch)
         kpt_conv = np.array(kpt_conv)
-
-        #if 'test' in set:
-        #    err_kpt_avg = get_error_kpt_avg(tcdcn, params, set_x2, set_y2)
 
         if plot_colored_kpt:
             high_res = True

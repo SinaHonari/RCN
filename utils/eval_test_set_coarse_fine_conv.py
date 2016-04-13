@@ -3,9 +3,6 @@
 # the images from the sets and gets the error_kpt_avg on them.
 #
 # Note: This module draws the keypoints on the downsampled 80*80 rgb images
-#
-# inputs:
-# sys.argv[1]: the complete path to the pickle file whose weights are assigned to the convnet
 
 import numpy as np
 import sys
@@ -39,42 +36,6 @@ def get_indices(set_x, set_y, indices):
         set_y[key] = set_y[key][indices]
     return [set_x, set_y]
 
-def limit_x(x, limit):
-    """
-    This module limits the values to the range of [0,limit]
-    """
-    x_gr_limit = x > limit
-    x_le_limit = x_gr_limit * limit + (1 - x_gr_limit) * x
-    x_gr_zero = x > 0.0
-    x_norm = x_gr_zero * x_le_limit
-    return x_norm
-
-def discretise_y(norm_kpt, dim):
-    """
-    this method makes the y_kpt_MTFL discretized to be put to the softmax values
-
-    :type norm_kpt: numpy float matrix of shape (#batch, #kpt*2)
-    :param norm_kpt: kpt values in the range of [0,1]
-
-    :type dim: int
-    :param dim: the dimentionality of the target picture
-
-    returns: a numpy int matrix of shape (#batch, #kpt)
-             with values in the range of [0, dim**2)
-    """
-    # make sure the values fall in the range [0,1]
-    y_norm = limit_x(norm_kpt, 0.99999)   # Don't allow exactly 1
-
-    # x_pos tells how many complete column in the image has been passed
-    #x_pos = y_norm[:,::2] * dim**2
-    #x_pos = x_pos.astype(int)
-
-    # JASON PROPOSED:
-    x_pos = (y_norm[:,::2] * dim).astype(int)
-    y_pos = (y_norm[:,1::2] * dim).astype(int)
-    discrt_pos = y_pos * dim + x_pos
-    return discrt_pos
-
 def sort_arrays(array):
     array_asc = np.sort(array)[::-1]
     array_asc_indx = np.argsort(array)[::-1]
@@ -90,9 +51,6 @@ def save_error_results(array, set_name):
     for err, indx in zip(array_asc, array_asc_indx):
         out_str.write("%s, %s\n" %(err, indx))
 
-    #err_kpt = OrderedDict()
-    #err_kpt['error'] = array_asc
-    #err_kpt['index'] = array_asc_indx
     err_kpt = array
 
     out_str_path = "%s/%s_sorted_indices.pickle" %(out_path, set_name)
@@ -172,13 +130,6 @@ def eval_test_sets(pkl_param_file, cfNet_path, mult_probs, use_batch_size_1,
         td = (target_dim, target_dim)
         scale_mul = 0.0
         translate_mul = 0.0
-        """
-        jitter = params['jitter_mul']
-        if 'test' in set_name:
-                jitter_mul = 0.0
-        else:
-                jitter_mul = jitter
-        """
 
         if rotation_file:
             rotation_set = rotation_lists[set_name]

@@ -16,8 +16,8 @@ sys.setrecursionlimit(2000)
 import RCN
 from RCN.utils.grad_updates import Train_alg
 from RCN.preprocessing.tools import (EOF, padRatio_to_pixels,
-                                            discretise_y, mask_padded_kpts,
-                                            get_bound_mask, get_one_hot_map)
+                                     discretise_y, mask_padded_kpts,
+                                     get_bound_mask, get_one_hot_map)
 from RCN.preprocessing.local_contrast_normalization import lcn
 from RCN.utils.convnet_tools import create_TCDCN_obejct, get_one_hot_predictions
 from RCN.models.layers import (ConvPoolLayer, Softmax)
@@ -69,19 +69,6 @@ def get_source_points(tcdcn_cfNet, x, y_kpt_norm, num_model_kpts, use_tcdcn=Fals
         model_points = tcdcn_cfNet.model_prediction(x, dropout=0)
         num_batch, num_kpts = y_kpt_norm.shape
         source_points = model_points
-
-        """
-        if num_model_kpts != num_kpts:# default is 68 for 300W dataset
-            # in this case the true and predicted keypoints should be merged
-            # get as many as 'num_model_kpts' random kpts per batch example
-            ind_0, ind_1 = get_rnd_kpts_per_samples(num_batch, num_kpts, num_model_kpts)
-            source_points = y_kpt_norm
-            # replacing true values with the model's prediction
-            source_points[ind_0, ind_1] = model_points[ind_0, ind_1]
-        else:
-            # in this case a model's output is taken as the source
-            source_points = model_points
-        """
     else:
         # in this case the true keypoint positions is taken as the source
         source_points = y_kpt_norm
@@ -762,14 +749,6 @@ class Train(object):
             mask_border = mask_padded_kpts(kpt_norm, mask_border)
             set_y['mask_border'] = mask_border
 
-            """
-            # getting border_pixels
-            pad_ratio = set_y['pad_ratio']
-            # change pad_ratio to border pixel locations
-            border_pixel = padRatio_to_pixels(pad_ratio, self.train_set_x_300W.shape[1])
-            set_y['border_pixel'] = border_pixel
-            """
-
             # making the values discrete
             # getting kpts in the range of [0, dim**2]
             kpt_discret = discretise_y(kpt_norm, self.dim)
@@ -804,16 +783,6 @@ class Train(object):
                                                                       self.nMaps_shuffled,
                                                                       self.rng, self.dropout_kpts)
 
-        """
-        if self.tcdcn_cfNet and self.train_all_kpts:
-            # In this case put error on all kpts, except the ones on the border
-            mask_kpts = y_mask_border
-        else:
-            # In this case only put error on the jittered kpts
-            # getting the masks where each one value indicates
-            # a jittered kpt that is not also on the border.
-            mask_kpts = y_mask_border * y_mask_jittered
-        """
         mask_kpts = y_mask_border * y_mask_jittered
 
         #y_mask_kpts is of shape (#batch * #kpts)
@@ -843,17 +812,6 @@ class Train(object):
                                                                       self.nMaps_shuffled,
                                                                       self.rng, self.dropout_kpts)
 
-        """
-        if self.tcdcn_cfNet and self.train_all_kpts:
-            # in this case, we are evaluating on the cfNet model's output,
-            # so consider all points, if they are not out of border
-            mask_kpts = y_mask_border
-        else:
-            # in this case we are dealing with the true keypoints, so only consider the jittered ones
-            # It gets the masks where each one value indicates
-            # a jittered kpt that is not also on the border.
-            mask_kpts = y_mask_border * y_mask_jittered
-        """
         mask_kpts = y_mask_border * y_mask_jittered
         #y_mask_kpts is of shape (#batch * #kpts)
         y_mask_kpts = np.ndarray.flatten(mask_kpts)
@@ -867,9 +825,6 @@ class Train(object):
         error_dict['cost'].append(this_epoch_cost)
         this_epoch_cost_kpt = np.mean(epoch_cost_kpt)
         error_dict['cost_kpt'].append(this_epoch_cost_kpt)
-        #epoch_error_kpt = np.sum(np.array(epoch_error_kpt), axis=0)
-        #error_dict['error_kpt'].append(epoch_error_kpt/num_samples)
-        # summing over all kpts that have been jittered
         # divided by the total number of such examples
         this_epoch_error_kpt_avg = np.sum(epoch_error_kpt)/num_samples
         error_dict['error_kpt_avg'].append(this_epoch_error_kpt_avg)
@@ -904,7 +859,6 @@ class Train(object):
 
     def eval_test_set(self, test_set_x, test_set_y, is_MTFL, error_dict, epoch):
         test_num_batches = error_dict['num_batches']
-        #test_num_samples = error_dict['num_samples']
         test_num_samples = 0
         sw_lenght = self.sw_lenght
         ##############################
@@ -975,11 +929,9 @@ class Train(object):
         avg_epoch_cost_kpt = np.mean(epoch_cost_kpt)
         # getting the average of each keypoint over all of the samples
         #epoch_error_kpt = np.sum(np.array(epoch_error_kpt), axis=0)
-        #avg_epoch_error_kpt = epoch_error_kpt/test_num_samples
         avg_epoch_error_kpt_avg = np.sum(epoch_error_kpt)/test_num_samples
         # appending epoch results
         error_dict['cost_kpt'].append(avg_epoch_cost_kpt)
-        #error_dict['error_kpt'].append(avg_epoch_error_kpt)
         error_dict['error_kpt_avg'].append(avg_epoch_error_kpt_avg)
 
         if (epoch+1) >= sw_lenght:
@@ -1189,8 +1141,6 @@ class Train(object):
         #################################
         # running the thread for training the model
         # each iteratiob of this while loop is one iteration of epoch
-        #epoch = -1
-        #while True:
         sys.stderr.write("Starting the first epoch.\n")
         for epoch in xrange(num_epochs):
             # checking whether child processes are stil alive
@@ -1221,7 +1171,8 @@ class Train(object):
             for upd in xrange(per_epoch_updates):
                 one_hot_maps_4D, y_kpt_norm, y_kpt_ocular_dist, y_mask_kpts = self.get_mini_batch_train_300W()
                 # getting values in the range of [0, dim**2]
-                if epoch < 0: # in the first epoch, we just evaluate the performance of random initialization without any parameter update
+                if epoch < 0:
+                    # in the first epoch, we just evaluate the performance of random initialization without any parameter update
                     # note that since the model is not trained in the first epoch, the valid and test sets cost and errors for the first epoch
                     # would be the model's performace before training
                     cost, cost_kpt, L2_cost, error_kpt = tcdcn.valid_model(L2_coef, one_hot_maps_4D, y_kpt_ocular_dist, y_kpt_norm,
@@ -1376,13 +1327,6 @@ class Train(object):
         # dumping the adadelta params at the end of training for the last epoch
         params_pickle_name = 'adadelta_params' + file_suffix + '.pickle'
         tcdcn.dump_adadelta_params(params_pickle_name)
-
-        '''
-        print ' printing the values'
-        params = tcdcn.get_params()
-        for param in params:
-            print "params %s" %(param,)
-        '''
 
         # saving the error and the cost #
         # 'train', 'valid' and 'test' sets have the following components.

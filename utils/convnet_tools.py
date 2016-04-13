@@ -10,7 +10,7 @@ import cPickle as pickle
 from RCN.preprocessing.tools import EOF, padRatio_to_pixels
 from RCN.models.create_procs import get_nkerns, get_target_dim
 from RCN.preprocessing.tools import (get_bound_mask, mask_padded_kpts,
-                                            discretise_y, get_one_hot_map)
+                                     discretise_y, get_one_hot_map)
 
 def set_one_for_nonzero(x):
     """Replaces nonzeros with ones

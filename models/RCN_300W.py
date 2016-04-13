@@ -2,7 +2,6 @@ import numpy as np
 import theano
 import theano.tensor as T
 from theano.tensor.nnet import conv
-# use optimizer_including=cudnn flag when running the jobs to enforce using cuDNN
 from collections import OrderedDict
 import cPickle as pickle
 import time
@@ -561,7 +560,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
     layerD1.W.name = 'Conv_layerD1_W'
     layerD1.b.name = 'Conv_layerD1_b'
     layerD1_output = layerD1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-    # layerD1_output is now of shape (#batch, #nkerns[7]=48, 11, 11)
+    # layerD1_output is now of shape (#batch, #nkerns[7]=48, 10, 10)
 
     """
     # second conv layer
@@ -578,7 +577,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
     )
     layerD2.W.name = 'Conv_layerD2_W'
     layerD2.b.name = 'Conv_layerD2_b'
-    # layerD2_output is now of shape (#batch, #nkerns[0]=5, 11, 11)
+    # layerD2_output is now of shape (#batch, #nkerns[0]=5, 10, 10)
     """
 
     ##########################
@@ -605,7 +604,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
             border_mode='full'
         )
         layerD3_output = layerD3[:, :, index_start: -index_start, index_start: -index_start]
-        # layerD3_output is now of shape (#batch, #nkerns[5]=5, 21, 21)
+        # layerD3_output is now of shape (#batch, #nkerns[5]=5, 20, 20)
     else:
         layerD3_upsample = T.extra_ops.repeat(layerD1_output, repeats=ratio, axis=-1)
         layerD3_output = T.extra_ops.repeat(layerD3_upsample, repeats=ratio, axis=-2)
@@ -649,7 +648,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
     layerC1.W.name = 'Conv_layerC1_W'
     layerC1.b.name = 'Conv_layerC1_b'
     layerC1_output = layerC1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-    # layerC1_output is now of shape (#batch, #nkerns[6]=48, 21, 21)
+    # layerC1_output is now of shape (#batch, #nkerns[6]=48, 20, 20)
 
     # second conv layer
     layerC2 = ConvPoolLayer(
@@ -669,8 +668,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
         layerC2_output = layerC2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
     else:
         layerC2_output = layerC2.output
-    #layerC2_output = layerC2.output[:, :, 1:-1, 1:-1]
-    # layerC2_output is now of shape (#batch, #nkerns[7]=32, 21, 21)
+    # layerC2_output is now of shape (#batch, #nkerns[7]=32, 20, 20)
 
     ##########################
     # upsampling layer for C #
@@ -740,7 +738,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
     layerM1.W.name = 'Conv_layerM1_W'
     layerM1.b.name = 'Conv_layerM1_b'
     layerM1_output = layerM1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-    # layerM1_output is now of shape (#batch, #nkerns[8]=32, 41, 41)
+    # layerM1_output is now of shape (#batch, #nkerns[8]=32, 40, 40)
 
     # second conv layer
     layerM2 = ConvPoolLayer(
@@ -760,7 +758,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
         layerM2_output = layerM2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
     else:
         layerM2_output = layerM2.output
-    # layerM2_output is now of shape (#batch, #nkerns[9]=16, 41, 41)
+    # layerM2_output is now of shape (#batch, #nkerns[9]=16, 40, 40)
 
     ##########################
     # upsampling layer for M #
@@ -856,8 +854,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
         layerF2_output = layerF2.output[:, :, conv_border_F:-conv_border_F, conv_border_F:-conv_border_F]
     else:
         layerF2_output = layerF2.output
-    #layerF2_output = layerF2.output[:, :, 1:-1, 1:-1]
-    # layerF2_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+    # layerF2_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
 
     # third F layer
     layerF3 = ConvPoolLayer(
@@ -877,8 +874,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
         layerF3_output = layerF3.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
     else:
         layerF3_output = layerF3.output
-    #layerF3_output = layerF3.output[:, :, 1:-1, 1:-1]
-    # layerF3_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+    # layerF3_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
 
     # specifying the input the layerFOut
     layer_FOut_input = layerF3_output
@@ -943,8 +939,7 @@ def fforward_model(layer1_input, dropout, nkerns, num_img_channels, dim, rng,
         layerFOut_output = layerFOut.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
     else:
         layerFOut_output = layerFOut.output
-    #layerFOut_output = layerFOut.output[:, :, 1:-1, 1:-1]
-    # layerFOut_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+    # layerFOut_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
 
     ##############################
     # buildign the softmax layer #
@@ -1047,7 +1042,6 @@ class TCDCN_ConvNet(object):
         rng = np.random.RandomState(param_seed)
         sys.stderr.write("rng seed for parameter initialization is %i\n" %param_seed)
 
-        #theano.config.compute_test_value = 'raise'
         sys.stderr.write('... building the model\n')
         x = T.tensor4('x', dtype=theano.config.floatX)  # the data is presented in 4D shape (#batch, #row, #cols, , #channels)
         # the given input is the shape (#batch, #row, #cols, #channels)
@@ -1354,16 +1348,6 @@ class TCDCN_ConvNet(object):
             [L2_coef_common, L2_coef_branch, x, y_kpt_ocular_dist, y_kpt_norm, bound_mask, mask_border, border_pixel, dropout],
             [cost_kpt, L2_cost, error_kpt, error_kpt_avg], allow_input_downcast=True)
 
-        """
-        # a function that returns all of the params of the model
-        self.get_params = theano.function([], [layerSh4.params[0], layerSh4.params[1], layerSh3.params[0], layerSh3.params[1], layerSh2.params[0],
-                                              layerSh2.params[1], layerSh1.params[0], layerSh1.params[1], layerF1.params[0], layerF1.params[1],
-                                              layerF2.params[0], layerF2.params[1], layerM1.params[0], layerM1.params[1], layerM2.params[0],
-                                              layerM2.params[1],layerC1.params[0], layerC1.params[1], layerC2.params[0], layerC2.params[1],
-                                              layerD1.params[0], layerD1.params[1]],
-                                              allow_input_downcast=True)
-        """
-
         ###########################################
         # Getting the prediction for the test set #
         ###########################################
@@ -1395,15 +1379,6 @@ class TCDCN_ConvNet(object):
         self.get_softmax_output = theano.function([x, dropout], softmax_output, allow_input_downcast=True)
 
         self.get_pre_softmax = theano.function([x, dropout], conv_sum, allow_input_downcast=True)
-
-        """
-        self.debug_softmax = theano.function([x, dropout], [T.stacklists([conv_sum]), T.stacklists([sum_layer_probs])],
-                                             allow_input_downcast=True)
-
-        self.debug_layers = theano.function([x, dropout], [layerSh1_output, layerSh3_output, layerSh5_output,
-                                                          layerS2_output, layerD1_output, layerM2_output],
-                                                          allow_input_downcast=True)
-        """
 
         # this method returns 2D vector of shape (#batch, #kpts), with each value in the range [0, dim**2)
         self.model_prediction = theano.function([x, dropout], predict_2D, allow_input_downcast=True)
@@ -1490,7 +1465,6 @@ class Train(object):
             self.data_queue_300W = data_queue['300W']
         if 'MTFL' in data_queue.keys():
             self.data_queue_MTFL = data_queue['MTFL']
-        #self.data_queue_MTFL, self.data_queue_300W = data_queue
         self.seed_queue = seed_queue
         self.num_procs = num_procs
 
@@ -1621,7 +1595,6 @@ class Train(object):
 
     def get_mini_batch_valid_300W(self, valid_set_x, valid_set_y, index, batch_size):
         # this method gets the next mini-batch only for one datast.
-        #batch_size = self.batch_size
         x = valid_set_x[index * batch_size: (index + 1) * batch_size]
         y_ocular_dist = valid_set_y['ocular_dist'][index * batch_size: (index + 1) * batch_size]
         y_kpt_norm = valid_set_y['kpt_norm'][index * batch_size: (index + 1) * batch_size]
@@ -1634,19 +1607,12 @@ class Train(object):
         return [x, y_kpt_norm, y_ocular_dist, y_bound_mask, y_mask_border, y_border_pixel]
 
     def append_errors(self, error_dict, epoch_sets, epoch, num_samples, is_train=True, batch_sets=None):
-        #epoch_cost, epoch_error_test, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_cost_gl,\
-        #   epoch_cost_gen, epoch_cost_sm, epoch_cost_pose, epoch_l2_cost = epoch_sets
         epoch_cost, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_l2_cost = epoch_sets
         sw_lenght = self.sw_lenght
         this_epoch_cost = np.mean(epoch_cost)
         error_dict['cost'].append(this_epoch_cost)
         this_epoch_cost_kpt = np.mean(epoch_cost_kpt)
         error_dict['cost_kpt'].append(this_epoch_cost_kpt)
-        #error_dict['cost_gl'].append(np.mean(epoch_cost_gl))
-        #error_dict['cost_gen'].append(np.mean(epoch_cost_gen))
-        #error_dict['cost_sm'].append(np.mean(epoch_cost_sm))
-        #error_dict['cost_pose'].append(np.mean(epoch_cost_pose))
-        #error_dict['error_test'].append(np.mean(epoch_error_test))
         epoch_error_kpt = np.sum(np.array(epoch_error_kpt), axis=0)
         error_dict['error_kpt'].append(epoch_error_kpt/num_samples)
         this_epoch_error_kpt_avg = np.sum(epoch_error_kpt_avg)/num_samples
@@ -1655,14 +1621,9 @@ class Train(object):
 
         if is_train and batch_sets:
             epoch_cost, epoch_cost_kpt, epoch_l2_cost = batch_sets
-            #epoch_cost, epoch_cost_kpt, epoch_l2_cost, epoch_cost_gl, epoch_cost_gen, epoch_cost_sm, epoch_cost_pose = batch_sets
             error_dict['cost_batch'].extend(epoch_cost)
             error_dict['cost_kpt_batch'].extend(epoch_cost_kpt)
             error_dict['L2_norm_batch'].extend(epoch_l2_cost)
-            #error_dict['cost_gl_batch'].extend(epoch_cost_gl)
-            #error_dict['cost_gen_batch'].extend(epoch_cost_gen)
-            #error_dict['cost_sm_batch'].extend(epoch_cost_sm)
-            #error_dict['cost_pose_batch'].extend(epoch_cost_pose)
 
         if not is_train:
         ##################################################################
@@ -1711,7 +1672,6 @@ class Train(object):
                 y_kpt_norm = test_set_y['kpt_norm'][index * batch_size: (index + 1) * batch_size]
                 y_kpt_ocular_dist = test_set_y['ocular_dist'][index * batch_size: (index + 1) * batch_size]
                 y_bound_mask = test_set_y['bound_mask'][index * batch_size: (index + 1) * batch_size]
-                #y_pad_ratio = test_set_y['pad_ratio'][index * batch_size: (index + 1) * batch_size]
                 y_mask_border = test_set_y['mask_border'][index * batch_size: (index + 1) * batch_size]
                 y_border_pixel = test_set_y['border_pixel'][index * batch_size: (index + 1) * batch_size]
                 #y_mask_border is of shape (#batch * #kpts)
@@ -1951,8 +1911,6 @@ class Train(object):
         #################################
         # running the thread for training the model
         # each iteratiob of this while loop is one iteration of epoch
-        #epoch = -1
-        #while True:
         for epoch in xrange(num_epochs):
             # checking whether child processes are stil alive
             if self.producers:
@@ -1983,7 +1941,8 @@ class Train(object):
             for upd in xrange(per_epoch_updates):
                 x, y_kpt_norm, y_kpt_ocular_dist, y_bound_mask, y_mask_border, border_pixel = self.get_mini_batch_train_300W()
                 # getting values in the range of [0, dim**2]
-                if epoch == 0: # in the first epoch, we just evaluate the performance of random initialization without any parameter update
+                if epoch == 0:
+                    # in the first epoch, we just evaluate the performance of random initialization without any parameter update
                     # note that since the model is not trained in the first epoch, the valid and test sets cost and errors for the first epoch
                     # would be the model's performace before training
                     cost, cost_kpt, L2_cost, error_kpt, error_kpt_avg = tcdcn.valid_model(L2_coef_common, L2_coef_branch, x,
@@ -1994,34 +1953,18 @@ class Train(object):
                                                                                 y_kpt_ocular_dist, y_kpt_norm,
                                                                                 y_mask_border, dropout=self.dropout)
 
-                #[cost_gl, cost_gen, cost_sm, cost_pose] = task_cost_vec
-                #[lambda_gl, lambda_gen, lambda_sm, lambda_pose] = Lambda_vec
                 epoch_cost.append(cost)
-                #epoch_error_test.append(error_test)
                 epoch_cost_kpt.append(cost_kpt)
                 epoch_l2_cost.append(L2_cost)
                 epoch_error_kpt.append(error_kpt)
                 epoch_error_kpt_avg.append(error_kpt_avg)
-                """
-                epoch_cost_gl.append(cost_gl)
-                epoch_cost_gen.append(cost_gen)
-                epoch_cost_sm.append(cost_sm)
-                epoch_cost_pose.append(cost_pose)
-                epoch_lambda_gl.append(lambda_gl)
-                epoch_lambda_gen.append(lambda_gen)
-                epoch_lambda_sm.append(lambda_sm)
-                epoch_lambda_pose.append(lambda_pose)
-                """
 
             # appending epoch results
-            #epoch_sets = [epoch_cost, epoch_error_test, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_cost_gl,\
-            #              epoch_cost_gen, epoch_cost_sm, epoch_cost_pose, epoch_l2_cost]
             epoch_sets = [epoch_cost, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_l2_cost]
             #######################################################
             # saving mini-batch logs only for the first 50 epochs #
             #######################################################
             if epoch < 50:
-                #batch_sets = [epoch_cost, epoch_cost_kpt, epoch_l2_cost, epoch_cost_gl, epoch_cost_gen, epoch_cost_sm, epoch_cost_pose]
                 batch_sets = [epoch_cost, epoch_cost_kpt, epoch_l2_cost]
             else:
                 batch_sets = None
@@ -2056,23 +1999,13 @@ class Train(object):
                     cost, cost_kpt, L2_cost, error_kpt, error_kpt_avg = tcdcn.valid_model(L2_coef_common, L2_coef_branch, x,
                                                                                     y_kpt_ocular_dist, y_kpt_norm,
                                                                                     y_mask_border, dropout=0)
-                    #[cost_gl, cost_gen, cost_sm, cost_pose] = task_cost_vec
                     epoch_cost.append(cost)
-                    #epoch_error_test.append(error_test)
                     epoch_cost_kpt.append(cost_kpt)
                     epoch_error_kpt.append(error_kpt)
                     epoch_error_kpt_avg.append(error_kpt_avg)
                     epoch_l2_cost.append(L2_cost)
-                    """
-                    epoch_cost_gl.append(cost_gl)
-                    epoch_cost_gen.append(cost_gen)
-                    epoch_cost_sm.append(cost_sm)
-                    epoch_cost_pose.append(cost_pose)
-                    """
 
                 # appending epoch results
-                #epoch_sets = [epoch_cost, epoch_error_test, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_cost_gl,\
-                #              epoch_cost_gen, epoch_cost_sm, epoch_cost_pose, epoch_l2_cost]
                 epoch_sets = [epoch_cost, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_l2_cost]
                 batch_sets = None
                 num_samples = Valid_error[subset]['num_samples']
@@ -2160,13 +2093,6 @@ class Train(object):
         # dumping the adadelta params at the end of training for the last epoch
         params_pickle_name = 'adadelta_params' + file_suffix + '.pickle'
         tcdcn.dump_adadelta_params(params_pickle_name)
-
-        '''
-        print ' printing the values'
-        params = tcdcn.get_params()
-        for param in params:
-            print "params %s" %(param,)
-        '''
 
         # saving the error and the cost #
         # 'train', 'valid' and 'test' sets have the following components.

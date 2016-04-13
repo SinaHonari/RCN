@@ -10,7 +10,7 @@ import sys
 sys.setrecursionlimit(2000)
 import RCN
 from RCN.utils.grad_updates import Train_alg
-from RCN.preprocessing.tools import EOF
+from RCN.preprocessing.tools import EOF, discretise_y
 from RCN.utils.bilinear import bilinear_weights
 from RCN.preprocessing.local_contrast_normalization import lcn
 from RCN.models.layers import (LogisticRegression, ConvPoolLayer,
@@ -38,7 +38,7 @@ def get_common_multiplier(coarse_mask_branch):
 
 class TCDCN_ConvNet(object):
     def __init__(self, learning_rate, use_ada_delta, decay, train_cost, num_img_channels, nkerns,\
-                 param_seed, mask_MTFL_layer, mask_300W_layer, use_lcn, target_dim=81,\
+                 param_seed, mask_MTFL_layer, mask_300W_layer, use_lcn, target_dim=80,\
                  bilinear=True, coarse_mask_branch=np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
                  L2_coef_out=1e-6, coarse_conv_size=3, weight_per_pixel=False, use_res_2=False,
                  conv_per_kpt=False, linear_conv_per_kpt=False, **kwargs):
@@ -91,25 +91,6 @@ class TCDCN_ConvNet(object):
 
         # the labels of the auxiliary tasks are presented as 1D vector of (#batch)
         # [int] labels starting from zero.
-        """
-        y_kpt_MTFL = T.matrix('y_kpt_MTFL', dtype=theano.config.floatX)
-        y_kpt_MTFL.tag.test_value = np.random.rand(128, 10).astype(theano.config.floatX)
-        y_gl = T.ivector('y_gl')
-        y_gl.tag.test_value = np.random.binomial(1, 0.5, 128).astype(theano.config.floatX)
-        y_gen = T.ivector('y_gen')
-        y_gen.tag.test_value = np.random.binomial(1, 0.5, 128).astype(theano.config.floatX)
-        y_sm = T.ivector('y_sm')
-        y_sm.tag.test_value = np.random.binomial(1, 0.5, 128).astype(theano.config.floatX)
-        y_pose = T.ivector('y_pose')
-        y_pose.tag.test_value = np.random.randint(5, size=128).astype(theano.config.floatX)
-        # setting the mask for the tasks
-        # a vector of lengths (#tasks)
-        mask = T.vector('mask', dtype=theano.config.floatX)
-        mask.tag.test_value = np.array([1, 1, 1, 1]).astype(theano.config.floatX)
-        # L2 cost coefficient
-        L2_coef = T.scalar('L2_coef', dtype=theano.config.floatX)
-        L2_coef.tag.test_value = np.float32(1.0)
-        """
         # L2 cost coefficient for the output layer
         L2_coef_common = T.scalar('L2_coef_common', dtype=theano.config.floatX)
         L2_coef_common.tag.test_value = np.float32(1.0)
@@ -118,11 +99,9 @@ class TCDCN_ConvNet(object):
         L2_coef_branch.tag.test_value = np.float32(1.0)
 
         # the scalar indicating the row up to which belongs to MTFL datast
-        #MTFL_row = T.iscalar('MTFL_row')
         # indicating which rows (samples) belong to MTFL
         mask_MTFL_vec = T.vector('mask_MTFL', dtype=theano.config.floatX)
         mask_MTFL_vec.tag.test_value = (np.ones((128))).astype(theano.config.floatX)
-        #mask_MTFL = mask_MTFL_vec.dimshuffle(0, 'x')
         mask_MTFL_serial = T.tile(mask_MTFL_vec, (num_keypoints,))
         # indicating which rows (samples) belong to 300W
         mask_300W_vec = T.vector('mask_300W', dtype=theano.config.floatX)
@@ -163,7 +142,7 @@ class TCDCN_ConvNet(object):
             border_mode='full'
         )
         layerSh1_output = layerSh1.output[:, :, 1:-1, 1:-1]
-        # layerSh1_output is now of shape (#batch, #nkerns[1]=16, 81, 81)
+        # layerSh1_output is now of shape (#batch, #nkerns[1]=16, 80, 80)
         layerSh1.W.name = 'Conv_layerSh1_W'
         layerSh1.b.name = 'Conv_layerSh1_b'
         self.layerSh1 = layerSh1
@@ -187,7 +166,7 @@ class TCDCN_ConvNet(object):
         layerF1.b.name = 'Conv_layerF1_b'
         self.layerF1 = layerF1
         layerF1_output = layerF1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-        # layerF1_output is now of shape (#batch, #nkerns[2]=16, 81, 81)
+        # layerF1_output is now of shape (#batch, #nkerns[2]=16, 80, 80)
 
         layerF2 = ConvPoolLayer(
             rng,
@@ -202,12 +181,11 @@ class TCDCN_ConvNet(object):
         layerF2.W.name = 'Conv_layerF2_W'
         layerF2.b.name = 'Conv_layerF2_b'
         self.layerF2 = layerF2
-        #layerF2_output = layerF2.output[:, :, 1:-1, 1:-1]
         if conv_small != 1:
             layerF2_output = layerF2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
         else:
             layerF2_output = layerF2.output
-        # layerF2_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+        # layerF2_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
 
         ######################
         ### shared layers2 ###
@@ -220,7 +198,7 @@ class TCDCN_ConvNet(object):
             ignore_border=False
         )
         layerP1_output = layerP1.output
-        # layerP1_output is now of shape (#batch, #nkerns[1]=16, 41, 41)
+        # layerP1_output is now of shape (#batch, #nkerns[1]=16, 40, 40)
         self.layerP1 = layerP1
 
         # shared conv layer
@@ -235,7 +213,7 @@ class TCDCN_ConvNet(object):
             border_mode='full'
         )
         layerSh2_output = layerSh2.output[:, :, 1:-1, 1:-1]
-        # layerSh2_output is now of shape (#batch, #nkerns[3]=32, 41, 41)
+        # layerSh2_output is now of shape (#batch, #nkerns[3]=32, 40, 40)
         layerSh2.W.name = 'Conv_layerSh2_W'
         layerSh2.b.name = 'Conv_layerSh2_b'
         self.layerSh2 = layerSh2
@@ -260,7 +238,7 @@ class TCDCN_ConvNet(object):
         layerM1.b.name = 'Conv_layerM1_b'
         self.layerM1 = layerM1
         layerM1_output = layerM1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-        # layerM1_output is now of shape (#batch, #nkerns[4]=32, 41, 41)
+        # layerM1_output is now of shape (#batch, #nkerns[4]=32, 40, 40)
 
         # second conv layer
         layerM2 = ConvPoolLayer(
@@ -276,12 +254,11 @@ class TCDCN_ConvNet(object):
         layerM2.W.name = 'Conv_layerM2_W'
         layerM2.b.name = 'Conv_layerM2_b'
         self.layerM2 = layerM2
-        #layerM2_output = layerM2.output[:, :, 1:-1, 1:-1]
         if conv_small != 1:
             layerM2_output = layerM2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
         else:
             layerM2_output = layerM2.output
-        # layerM2_output is now of shape (#batch, #nkerns[0]=5, 41, 41)
+        # layerM2_output is now of shape (#batch, #nkerns[0]=5, 40, 40)
 
         ##########################
         # upsampling layer for M #
@@ -303,7 +280,7 @@ class TCDCN_ConvNet(object):
             )
             self.layerM3 = layerM3
             layerM3_output = layerM3[:, :, index_start: -index_start, index_start: -index_start]
-            # layerM3_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+            # layerM3_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
         else:
             layerM3_upsample = T.extra_ops.repeat(layerM2_output, repeats=ratio, axis=-1)
             layerM3_output = T.extra_ops.repeat(layerM3_upsample, repeats=ratio, axis=-2)
@@ -319,7 +296,7 @@ class TCDCN_ConvNet(object):
             ignore_border=False
         )
         layerP2_output = layerP2.output
-        # layerP2_output is now of shape (#batch, #nkerns[3]=32, 21, 21)
+        # layerP2_output is now of shape (#batch, #nkerns[3]=32, 20, 20)
         self.layerP2 = layerP2
 
         # shared conv layer
@@ -334,7 +311,7 @@ class TCDCN_ConvNet(object):
             border_mode='full'
         )
         layerSh3_output = layerSh3.output[:, :, 1:-1, 1:-1]
-        # layerSh3_output is now of shape (#batch, #nkerns[5]=48, 21, 21)
+        # layerSh3_output is now of shape (#batch, #nkerns[5]=48, 20, 20)
         layerSh3.W.name = 'Conv_layerSh3_W'
         layerSh3.b.name = 'Conv_layerSh3_b'
         self.layerSh3 = layerSh3
@@ -359,7 +336,7 @@ class TCDCN_ConvNet(object):
         layerC1.b.name = 'Conv_layerC1_b'
         self.layerC1 = layerC1
         layerC1_output = layerC1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-        # layerC1_output is now of shape (#batch, #nkerns[6]=48, 21, 21)
+        # layerC1_output is now of shape (#batch, #nkerns[6]=48, 20, 20)
 
         # second conv layer
         layerC2 = ConvPoolLayer(
@@ -375,12 +352,11 @@ class TCDCN_ConvNet(object):
         layerC2.W.name = 'Conv_layerC2_W'
         layerC2.b.name = 'Conv_layerC2_b'
         self.layerC2 = layerC2
-        #layerC2_output = layerC2.output[:, :, 1:-1, 1:-1]
         if conv_small != 1:
             layerC2_output = layerC2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
         else:
             layerC2_output = layerC2.output
-        # layerC2_output is now of shape (#batch, #nkerns[0]=5, 21, 21)
+        # layerC2_output is now of shape (#batch, #nkerns[0]=5, 20, 20)
 
         ##########################
         # upsampling layer for C #
@@ -402,7 +378,7 @@ class TCDCN_ConvNet(object):
             )
             self.layerC3 = layerC3
             layerC3_output = layerC3[:, :, index_start: -index_start, index_start: -index_start]
-            # layerC3_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+            # layerC3_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
         else:
             layerC3_upsample = T.extra_ops.repeat(layerC2_output, repeats=ratio, axis=-1)
             layerC3_output = T.extra_ops.repeat(layerC3_upsample, repeats=ratio, axis=-2)
@@ -418,7 +394,7 @@ class TCDCN_ConvNet(object):
             ignore_border=False
         )
         layerP3_output = layerP3.output
-        # layerP3_output is now of shape (#batch, #nkerns[5]=48, 11, 11)
+        # layerP3_output is now of shape (#batch, #nkerns[5]=48, 10, 10)
         self.layerP3 = layerP3
 
         # shared conv layer
@@ -433,7 +409,7 @@ class TCDCN_ConvNet(object):
             border_mode='full'
         )
         layerSh4_output = layerSh4.output[:, :, 1:-1, 1:-1]
-        # layerSh4_output is now of shape (#batch, #nkerns[7]=48, 11, 11)
+        # layerSh4_output is now of shape (#batch, #nkerns[7]=48, 10, 10)
         layerSh4.W.name = 'Conv_layerSh4_W'
         layerSh4.b.name = 'Conv_layerSh4_b'
         self.layerSh4 = layerSh4
@@ -458,7 +434,7 @@ class TCDCN_ConvNet(object):
         layerD1.b.name = 'Conv_layerD1_b'
         self.layerD1 = layerD1
         layerD1_output = layerD1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
-        # layerD1_output is now of shape (#batch, #nkerns[7]=48, 11, 11)
+        # layerD1_output is now of shape (#batch, #nkerns[7]=48, 10, 10)
 
         # second conv layer
         layerD2 = ConvPoolLayer(
@@ -478,8 +454,7 @@ class TCDCN_ConvNet(object):
             layerD2_output = layerD2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
         else:
             layerD2_output = layerD2.output
-        #layerD2_output = layerD2.output[:, :, 1:-1, 1:-1]
-        # layerD2_output is now of shape (#batch, #nkerns[0]=5, 11, 11)
+        # layerD2_output is now of shape (#batch, #nkerns[0]=5, 10, 10)
 
         ##########################
         # upsampling layer for D #
@@ -501,7 +476,7 @@ class TCDCN_ConvNet(object):
             )
             self.layerD3 = layerD3
             layerD3_output = layerD3[:, :, index_start: -index_start, index_start: -index_start]
-            # layerD3_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+            # layerD3_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
         else:
             layerD3_upsample = T.extra_ops.repeat(layerD2_output, repeats=ratio, axis=-1)
             layerD3_output = T.extra_ops.repeat(layerD3_upsample, repeats=ratio, axis=-2)
@@ -579,7 +554,6 @@ class TCDCN_ConvNet(object):
             layerS2_output = layerS2.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
         else:
             layerS2_output = layerS2.output
-        # layerS2_output = layerS2.output[:, :, border:-border, border:-border]
         # layerS2_output is now of shape (#batch, #nkerns[0]=5, 5, 5)
 
         ##########################
@@ -602,7 +576,7 @@ class TCDCN_ConvNet(object):
             )
             self.layerS3 = layerS3
             layerS3_output = layerS3[:, :, index_start: -index_start, index_start: -index_start]
-            # layerS3_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+            # layerS3_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
         else:
             layerS3_upsample = T.extra_ops.repeat(layerS2_output, repeats=ratio, axis=-1)
             layerS3_output = T.extra_ops.repeat(layerS3_upsample, repeats=ratio, axis=-2)
@@ -662,7 +636,6 @@ class TCDCN_ConvNet(object):
             layerT1.W.name = 'Conv_layerT1_W'
             layerT1.b.name = 'Conv_layerT1_b'
             self.layerT1 = layerT1
-            #layerT1_output = layerT1.output[:, :, 1:-1, 1:-1]
             layerT1_output = layerT1.output[:, :, conv_border:-conv_border, conv_border:-conv_border]
             # layerT1_output is now of shape (#batch, #nkerns[10]=48, 2, 2)
 
@@ -706,7 +679,7 @@ class TCDCN_ConvNet(object):
                 )
                 self.layerT3 = layerT3
                 layerT3_output = layerT3[:, :, index_start: -index_start, index_start: -index_start]
-                # layerT3_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+                # layerT3_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
             else:
                 layerT3_upsample = T.extra_ops.repeat(layerT2_output, repeats=ratio, axis=-1)
                 layerT3_output = T.extra_ops.repeat(layerT3_upsample, repeats=ratio, axis=-2)
@@ -792,7 +765,7 @@ class TCDCN_ConvNet(object):
         ################################
         # softmax layers for debugging #
         ################################
-        # layerF2_output is now of shape (#batch, #nkerns[0]=5, 81, 81)
+        # layerF2_output is now of shape (#batch, #nkerns[0]=5, 80, 80)
         layerF2_weighted = conv_sum_concat[0]
         #layerF2_weighted = layerF2_output * self.W_branch[0].dimshuffle('x', 0 ,'x', 'x')
         # layerF2_3D is of shape (#batch_size * #kpts, #rows, #cols)
@@ -900,43 +873,6 @@ class TCDCN_ConvNet(object):
 
         error_kpt = error_kpt_MTFL
         error_kpt_avg = error_kpt_avg_MTFL
-
-        """
-        ####################################
-        # getting probability for branches #
-        ####################################
-        probF_all = 0
-        probM_all = 0
-        probC_all = 0
-        probD_all = 0
-        probS_all = 0
-        for kpt in xrange(num_keypoints):
-            # index is the selected index of the keypoint by model (scalar)
-            index = predict[kpt]
-
-            # layerF2_probs becomes of shape (#batch_size, #kpts, #row * #cols)
-            # layerF2_probs_2D is of shape (#batch_size * #kpts, #row * #cols)
-            layerF2_probs_2D = layerF2_probs.reshape((-1, dim * dim))
-            # probF2_prob_kpt is the probablity assigned by the branch F to the selected keypoint
-            probF2_kpt = layerF2_probs_2D[kpt, index]
-            probF_all += probF2_kpt
-
-            layerM3_probs_2D = layerM3_probs.reshape((-1, dim * dim))
-            probM3_kpt = layerM3_probs_2D[kpt, index]
-            probM_all += probM3_kpt
-
-            layerC3_probs_2D = layerC3_probs.reshape((-1, dim * dim))
-            probC3_kpt = layerC3_probs_2D[kpt, index]
-            probC_all += probC3_kpt
-
-            layerD3_probs_2D = layerD3_probs.reshape((-1, dim * dim))
-            probD3_kpt = layerD3_probs_2D[kpt, index]
-            probD_all += probD3_kpt
-
-            layerS3_probs_2D = layerS3_probs.reshape((-1, dim * dim))
-            probS3_kpt = layerS3_probs_2D[kpt, index]
-            probS_all += probS3_kpt
-        """
 
         #############################
         # getting errors seperately #
@@ -1056,8 +992,6 @@ class TCDCN_ConvNet(object):
                                               layerSh5.params[1], layerS1.params[0], layerS1.params[1], layerS2.params[0], layerS2.params[1]],
                                               allow_input_downcast=True)
 
-        #x_pred_MTFL = x_pred_MTFL.reshape((-1, num_keypoints))
-        #y_pred_MTFL = y_pred_MTFL.reshape((-1, num_keypoints))
         x_pred_MTFL = x_pred.reshape((-1, num_keypoints))
         y_pred_MTFL = y_pred.reshape((-1, num_keypoints))
         # interleaving x and y values
@@ -1067,28 +1001,12 @@ class TCDCN_ConvNet(object):
         kpt_pred_MTFL = T.set_subtensor(kpt_pred[:,1::2], y_pred_MTFL)
         # kpt_pred_MTFL contains integers in the range [0, dim)
         self.get_keypoints_MTFL = theano.function([x, dropout], kpt_pred_MTFL, allow_input_downcast=True)
-        #self.get_keypoints_300W = theano.function([x], layer_out_kpt_300W_predict, allow_input_downcast=True)
 
         self.get_errors = theano.function([x, y_kpt_ocular_dist, y_kpt_MTFL, mask_MTFL_vec, dropout],
                                            error_kpt_each, allow_input_downcast=True)
 
         self.debug_softmax = theano.function([x, dropout], [T.stacklists([conv_sum]), T.stacklists([sum_layer_probs])],
                                              allow_input_downcast=True)
-
-        """
-        # not weighted softmax of each branch
-        self.debug_softmax = theano.function([x, dropout],
-                                             [T.stacklists([layerF2_output, layerM3_output, layerC3_output, layerD3_output, layerS3_output, conv_sum]),
-                                              T.stacklists([layerF2_probs, layerM3_probs, layerC3_probs, layerD3_probs, layerS3_probs, sum_layer_probs])],
-                                             allow_input_downcast=True)
-        # weighted softmax of each branch
-        self.debug_softmax = theano.function([x, dropout],
-                                             [T.stacklists([layerS3_weighted, layerD3_weighted, layerC3_weighted, layerM3_weighted, layerF2_weighted, conv_sum]),
-                                              T.stacklists([layerS3_probs, layerD3_probs, layerC3_probs, layerM3_probs, layerF2_probs, sum_layer_probs])],
-                                             allow_input_downcast=True)
-
-        self.get_grad = theano.function([x, dropout], [probF_all, probM_all, probC_all, probD_all, probS_all], allow_input_downcast=True)
-        """
 
     def dump_params(self, pickle_name):
         "This method dumps the parameters of the TCDCN_ConvNet"
@@ -1143,51 +1061,6 @@ def append_text(file_name, text):
     with open (file_path, 'a') as fp:
         fp.write(text)
 
-def limit_x(x, limit):
-    """
-    This module limits the values to the range of [0,limit]
-    """
-    x_gr_limit = x > limit
-    x_le_limit = x_gr_limit * limit + (1 - x_gr_limit) * x
-    x_gr_zero = x > 0.0
-    x_norm = x_gr_zero * x_le_limit
-    return x_norm
-
-def discretise_y(norm_kpt, dim):
-    """
-    this method makes the y_kpt_MTFL discretized to be put to the softmax values
-
-    :type norm_kpt: numpy float matrix of shape (#batch, #kpt*2)
-    :param norm_kpt: kpt values in the range of [0,1]
-
-    :type dim: int
-    :param dim: the dimentionality of the target picture
-
-    returns: a numpy int matrix of shape (#batch, #kpt)
-             with values in the range of [0, dim**2)
-    """
-    # make sure the values fall in the range [0,1]
-    y_norm = limit_x(norm_kpt, 0.99999)   # Don't allow exactly 1
-
-    # x_pos tells how many complete column in the image has been passed
-    #x_pos = y_norm[:,::2] * dim**2
-    #x_pos = x_pos.astype(int)
-
-    # JASON PROPOSED:
-    x_pos = (y_norm[:,::2] * dim).astype(int)
-    y_pos = (y_norm[:,1::2] * dim).astype(int)
-    discrt_pos = y_pos * dim + x_pos
-    return discrt_pos
-
-    # y_pos tells the row in the current column
-    #y_pos = y_norm[:,1::2] * dim
-    #y_pos = y_pos.astype(int)
-    #discrt_pos = x_pos + y_pos
-
-    # resetting values in the range of [0, dim**2]
-    #discrt_norm_val = limit_x(discrt_pos, dim**2).astype(int)
-    #return discrt_norm_val
-
 class Train(object):
     def __init__(self, data_queue, seed_queue, nkerns, num_epochs, learning_rate, batch_size, sliding_window_lenght, task_stop_threshold,
                  L2_coef_common, L2_coef_branch, use_ada_delta, decay, param_path, weight_per_pixel, use_res_2, conv_per_kpt,
@@ -1197,7 +1070,6 @@ class Train(object):
             self.data_queue_300W = data_queue['300W']
         if 'MTFL' in data_queue.keys():
             self.data_queue_MTFL = data_queue['MTFL']
-        #self.data_queue_MTFL, self.data_queue_300W = data_queue
         self.seed_queue = seed_queue
         self.num_procs = num_procs
 
@@ -1297,26 +1169,6 @@ class Train(object):
         # getting 300W mini_batch
         if self.mask_300W:
             raise Exception("no set other than MTFL can be trained")
-            """
-            ###############################
-            # jittering getting 300W data #
-            ###############################
-            if self.index_300W == 0:
-                seed, next_elem = self.data_queue_300W.get()
-                self.train_set_x_300W, self.train_set_y_300W = next_elem
-                #sys.stderr.write("getting 300W elem for seed %i\n" %seed)
-
-                # putting the seed values
-                if self.SEED_300W < self.max_epochs_300W:
-                    self.seed_queue.put(('300W', self.SEED_300W))
-                    self.SEED_300W += 1
-                else:
-                    self.AddEOF()
-
-            x_300W = self.train_set_x_300W[index_300W * batch_size: (index_300W + 1) * batch_size]
-            y_kpt_ocular_dist_300W = self.train_set_y_300W['ocular_dist'][index_300W * batch_size: (index_300W + 1) * batch_size]
-            y_kpt_300W = self.train_set_y_300W['kpt_norm'][index_300W * batch_size: (index_300W + 1) * batch_size]
-            """
         else:
             y_kpt_300W = self.y_kpt_300W_dummy
 
@@ -1382,18 +1234,6 @@ class Train(object):
             mask_300W_vec = np.zeros((x.shape[0]))
         elif val_set == '300W':
             raise Exception("no set other than MTFL can be trained")
-            """
-            x = valid_set_x[index * batch_size: (index + 1) * batch_size]
-            y_gl = self.y_task_dummy
-            y_gen = self.y_task_dummy
-            y_sm = self.y_task_dummy
-            y_pose = self.y_task_dummy
-            y_kpt_ocular_dist = valid_set_y['ocular_dist'][index * batch_size: (index + 1) * batch_size]
-            y_kpt_MTFL = self.y_kpt_MTFL_dummy
-            y_kpt_300W = valid_set_y['kpt_norm'][index * batch_size: (index + 1) * batch_size]
-            mask_MTFL_vec = np.zeros((x.shape[0]))
-            mask_300W_vec = np.ones((x.shape[0]))
-            """
         else:
             sys.stderr.write("validation set does not exist")
             sys.exit(0)
@@ -1409,19 +1249,12 @@ class Train(object):
         return [x, y_gl, y_gen, y_sm, y_pose, y_kpt_ocular_dist, y_kpt_MTFL, y_kpt_300W,  mask_MTFL_vec, mask_300W_vec]
 
     def append_errors(self, error_dict, epoch_sets, epoch, num_samples, is_train=True, batch_sets=None):
-        #epoch_cost, epoch_error_test, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_cost_gl,\
-        #   epoch_cost_gen, epoch_cost_sm, epoch_cost_pose, epoch_l2_cost = epoch_sets
         epoch_cost, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_l2_cost = epoch_sets
         sw_lenght = self.sw_lenght
         this_epoch_cost = np.mean(epoch_cost)
         error_dict['cost'].append(this_epoch_cost)
         this_epoch_cost_kpt = np.mean(epoch_cost_kpt)
         error_dict['cost_kpt'].append(this_epoch_cost_kpt)
-        #error_dict['cost_gl'].append(np.mean(epoch_cost_gl))
-        #error_dict['cost_gen'].append(np.mean(epoch_cost_gen))
-        #error_dict['cost_sm'].append(np.mean(epoch_cost_sm))
-        #error_dict['cost_pose'].append(np.mean(epoch_cost_pose))
-        #error_dict['error_test'].append(np.mean(epoch_error_test))
         epoch_error_kpt = np.sum(np.array(epoch_error_kpt), axis=0)
         error_dict['error_kpt'].append(epoch_error_kpt/num_samples)
         this_epoch_error_kpt_avg = np.sum(epoch_error_kpt_avg)/num_samples
@@ -1430,14 +1263,9 @@ class Train(object):
 
         if is_train and batch_sets:
             epoch_cost, epoch_cost_kpt, epoch_l2_cost = batch_sets
-            #epoch_cost, epoch_cost_kpt, epoch_l2_cost, epoch_cost_gl, epoch_cost_gen, epoch_cost_sm, epoch_cost_pose = batch_sets
             error_dict['cost_batch'].extend(epoch_cost)
             error_dict['cost_kpt_batch'].extend(epoch_cost_kpt)
             error_dict['L2_norm_batch'].extend(epoch_l2_cost)
-            #error_dict['cost_gl_batch'].extend(epoch_cost_gl)
-            #error_dict['cost_gen_batch'].extend(epoch_cost_gen)
-            #error_dict['cost_sm_batch'].extend(epoch_cost_sm)
-            #error_dict['cost_pose_batch'].extend(epoch_cost_pose)
 
         if not is_train:
         ##################################################################
@@ -1484,15 +1312,6 @@ class Train(object):
                              x, y_kpt_ocular_dist, y_kpt_MTFL, mask_MTFL, dropout=0)
             else:
                 raise Exception("no set other than MTFL can be trained")
-                """
-                # adding 300W data
-                x = test_set_x[index * batch_size: (index + 1) * batch_size]
-                y_kpt_300W = test_set_y['kpt_norm'][index * batch_size: (index + 1) * batch_size]
-                y_kpt_ocular_dist = test_set_y['ocular_dist'][index * batch_size: (index + 1) * batch_size]
-                mask_300W = np.ones((x.shape[0]))
-                cost_kpt, error_kpt, error_kpt_avg, L2_cost = self.tcdcn.test_300W(self.L2_coef_common, self.L2_coef_branch,
-                             x, y_kpt_300W, y_kpt_ocular_dist, mask_300W)
-                """
 
             # accumulating the values of the mini-batcjes
             epoch_cost_kpt.append(cost_kpt)
@@ -1694,8 +1513,6 @@ class Train(object):
         #################################
         # running the thread for training the model
         # each iteratiob of this while loop is one iteration of epoch
-        #epoch = -1
-        #while True:
         for epoch in xrange(num_epochs):
             # checking whether child processes are stil alive
             if self.producers:
@@ -1725,9 +1542,8 @@ class Train(object):
 
             for upd in xrange(per_epoch_updates):
                 x, y_gl, y_gen, y_sm, y_pose, y_kpt_ocular_dist, y_kpt_MTFL, y_kpt_300W,  mask_MTFL_vec, mask_300W_vec = self.get_mini_batch_train()
-                # getting values in the range of [0, dim**2]
-                #y_kpt_MTFL = discretise_y(y_kpt_MTFL, self.dim)
-                if epoch == 0: # in the first epoch, we just evaluate the performance of random initialization without any parameter update
+                if epoch == 0:
+                    # in the first epoch, we just evaluate the performance of random initialization without any parameter update
                     # note that since the model is not trained in the first epoch, the valid and test sets cost and errors for the first epoch
                     # would be the model's performace before training
                     cost, cost_kpt, L2_cost, error_kpt, error_kpt_avg = tcdcn.valid_model(L2_coef_common, L2_coef_branch, x,
@@ -1736,34 +1552,18 @@ class Train(object):
                     cost, cost_kpt, L2_cost, error_kpt, error_kpt_avg = tcdcn.train_model(L2_coef_common, L2_coef_branch, x,
                                                                         y_kpt_ocular_dist, y_kpt_MTFL, mask_MTFL_vec, dropout=self.dropout)
 
-                #[cost_gl, cost_gen, cost_sm, cost_pose] = task_cost_vec
-                #[lambda_gl, lambda_gen, lambda_sm, lambda_pose] = Lambda_vec
                 epoch_cost.append(cost)
-                #epoch_error_test.append(error_test)
                 epoch_cost_kpt.append(cost_kpt)
                 epoch_l2_cost.append(L2_cost)
                 epoch_error_kpt.append(error_kpt)
                 epoch_error_kpt_avg.append(error_kpt_avg)
-                """
-                epoch_cost_gl.append(cost_gl)
-                epoch_cost_gen.append(cost_gen)
-                epoch_cost_sm.append(cost_sm)
-                epoch_cost_pose.append(cost_pose)
-                epoch_lambda_gl.append(lambda_gl)
-                epoch_lambda_gen.append(lambda_gen)
-                epoch_lambda_sm.append(lambda_sm)
-                epoch_lambda_pose.append(lambda_pose)
-                """
 
             # appending epoch results
-            #epoch_sets = [epoch_cost, epoch_error_test, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_cost_gl,\
-            #              epoch_cost_gen, epoch_cost_sm, epoch_cost_pose, epoch_l2_cost]
             epoch_sets = [epoch_cost, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_l2_cost]
             #######################################################
             # saving mini-batch logs only for the first 50 epochs #
             #######################################################
             if epoch < 50:
-                #batch_sets = [epoch_cost, epoch_cost_kpt, epoch_l2_cost, epoch_cost_gl, epoch_cost_gen, epoch_cost_sm, epoch_cost_pose]
                 batch_sets = [epoch_cost, epoch_cost_kpt, epoch_l2_cost]
             else:
                 batch_sets = None
@@ -1793,28 +1593,16 @@ class Train(object):
                     # getting the next mini-batch for the validation set
                     x, y_gl, y_gen, y_sm, y_pose, y_kpt_ocular_dist, y_kpt_MTFL, y_kpt_300W,  mask_MTFL_vec, mask_300W_vec = \
                         self.get_mini_batch_valid(setx, sety, index, subset)
-                    # getting values in the range of [0, dim**2]
-                    #y_kpt_MTFL = discretise_y(y_kpt_MTFL, self.dim)
                     # evaluating performance on the validation batch
                     cost, cost_kpt, L2_cost, error_kpt, error_kpt_avg = tcdcn.valid_model(L2_coef_common, L2_coef_branch, x,
                                                                         y_kpt_ocular_dist, y_kpt_MTFL, mask_MTFL_vec, dropout=0)
-                    #[cost_gl, cost_gen, cost_sm, cost_pose] = task_cost_vec
                     epoch_cost.append(cost)
-                    #epoch_error_test.append(error_test)
                     epoch_cost_kpt.append(cost_kpt)
                     epoch_error_kpt.append(error_kpt)
                     epoch_error_kpt_avg.append(error_kpt_avg)
                     epoch_l2_cost.append(L2_cost)
-                    """
-                    epoch_cost_gl.append(cost_gl)
-                    epoch_cost_gen.append(cost_gen)
-                    epoch_cost_sm.append(cost_sm)
-                    epoch_cost_pose.append(cost_pose)
-                    """
 
                 # appending epoch results
-                #epoch_sets = [epoch_cost, epoch_error_test, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_cost_gl,\
-                #              epoch_cost_gen, epoch_cost_sm, epoch_cost_pose, epoch_l2_cost]
                 epoch_sets = [epoch_cost, epoch_cost_kpt, epoch_error_kpt, epoch_error_kpt_avg, epoch_l2_cost]
                 batch_sets = None
                 num_samples = Valid_error[subset]['num_samples']
@@ -1901,13 +1689,6 @@ class Train(object):
         # dumping the adadelta params at the end of training for the last epoch
         params_pickle_name = 'adadelta_params' + file_suffix + '.pickle'
         tcdcn.dump_adadelta_params(params_pickle_name)
-
-        '''
-        print ' printing the values'
-        params = tcdcn.get_params()
-        for param in params:
-            print "params %s" %(param,)
-        '''
 
         # saving the error and the cost #
         # 'train', 'valid' and 'test' sets have the following components.

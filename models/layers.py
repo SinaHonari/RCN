@@ -7,7 +7,7 @@ from theano.tensor.nnet.abstract_conv import conv2d_grad_wrt_inputs
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 def apply_act(x, act=None):
-    # apply act(x)
+    # applying activation to x
     # linear:0, sigmoid:1, tanh:2, relu:3, softmax:4, ultra_fast_sigmoid:5
     if act == 'sigmoid' or act == 1:
         rval = T.nnet.sigmoid(x)
@@ -106,13 +106,6 @@ class LogisticRegression(object):
         """Return the mean of the negative log-likelihood of the prediction
         of this model under a given target distribution.
 
-        .. math::
-
-            \frac{1}{|\mathcal{D}|} \mathcal{L} (\theta=\{W,b\}, \mathcal{D}) =
-            \frac{1}{|\mathcal{D}|} \sum_{i=0}^{|\mathcal{D}|}
-                \log(P(Y=y^{(i)}|x^{(i)}, W,b)) \\
-            \ell (\theta=\{W,b\}, \mathcal{D})
-
         :type y: theano.tensor.TensorType
         :param y: corresponds to a vector that gives for each example the
                   correct label
@@ -186,13 +179,6 @@ class Softmax(object):
     def negative_log_likelihood(self, y):
         """Return the mean of the negative log-likelihood of the prediction
         of this model under a given target distribution.
-
-        .. math::
-
-            \frac{1}{|\mathcal{D}|} \mathcal{L} (\theta=\{W,b\}, \mathcal{D}) =
-            \frac{1}{|\mathcal{D}|} \sum_{i=0}^{|\mathcal{D}|}
-                \log(P(Y=y^{(i)}|x^{(i)}, W,b)) \\
-            \ell (\theta=\{W,b\}, \mathcal{D})
 
         :type y: theano.tensor.TensorType
         :param y: corresponds to a vector that gives for each example the

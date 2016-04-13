@@ -300,7 +300,6 @@ def create_producers(Train, mask_MTFL, mask_300W, td, scale_mul,
         data_queue_MTFL = OrderedQueue(maxsize=6)
         data_queue['MTFL'] = data_queue_MTFL
         # initializing the seed_queue
-        # each MTFL jittered set takes about 56 meg. 4 items take 224 meg
         num_queue_elem = np.min((num_epochs, NUMBER_OF_PROCESSES + 1))
         for i in xrange(num_queue_elem):
             seed_queue.put(('MTFL', i))
@@ -312,7 +311,6 @@ def create_producers(Train, mask_MTFL, mask_300W, td, scale_mul,
         data_sets['300W'] = (train_set_x_300W, train_set_y_300W)
         data_queue_300W = OrderedQueue(maxsize=15)
         data_queue['300W'] = data_queue_300W
-        # each 300W jittered set takes about 21 meg. 12 items take 252 meg
         num_queue_elem = np.min((num_epochs, NUMBER_OF_PROCESSES + 9))
         for i in xrange(num_queue_elem):
             seed_queue.put(('300W', i))

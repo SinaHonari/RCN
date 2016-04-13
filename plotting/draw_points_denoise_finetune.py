@@ -174,32 +174,6 @@ def get_pickle_indices(picke_path):
         pickle_indices = vals['samples_vec']
     return pickle_indices, vals
 
-def discretise_y(norm_kpt, dim):
-    """
-    this method makes the y_kpt_MTFL discretized to be put to the softmax values
-
-    :type norm_kpt: numpy float matrix of shape (#batch, #kpt*2)
-    :param norm_kpt: kpt values in the range of [0,1]
-
-    :type dim: int
-    :param dim: the dimentionality of the target picture
-
-    returns: a numpy int matrix of shape (#batch, #kpt)
-             with values in the range of [0, dim**2)
-    """
-    # make sure the values fall in the range [0,1]
-    y_norm = limit_x(norm_kpt, 0.99999)   # Don't allow exactly 1
-
-    # x_pos tells how many complete column in the image has been passed
-    #x_pos = y_norm[:,::2] * dim**2
-    #x_pos = x_pos.astype(int)
-
-    # JASON PROPOSED:
-    x_pos = (y_norm[:,::2] * dim).astype(int)
-    y_pos = (y_norm[:,1::2] * dim).astype(int)
-    discrt_pos = y_pos * dim + x_pos
-    return discrt_pos
-
 def save_error_results(array, set_name, sample_num):
     array_asc = np.sort(array)[::-1]
     array_asc_indx = np.argsort(array)[::-1]
