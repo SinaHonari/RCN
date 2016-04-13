@@ -248,8 +248,14 @@ def create_TCDCN_obejct(pkl_param_file, dset='MTFL', create_object=True):
 
     cost = params['cost']
     gray_scale = params['gray_scale']
-    mask_MTFL = params['mask_MTFL']
-    mask_300W = params['mask_300W']
+    paral_conv = params['paral_conv']
+    denoise_conv = params['denoise_conv']
+    if paral_conv in [2, 5, 6] or denoise_conv in [1, 2]:
+        mask_MTFL = 0
+        mask_300W = 1
+    elif paral_conv in [1, 3, 4]:
+        mask_300W = 0
+        mask_MTFL = 1
     if gray_scale:
         num_img_channels = 1
     else:

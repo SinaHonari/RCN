@@ -7,7 +7,6 @@ import numpy as np
 import theano
 import theano.tensor as T
 from theano.tensor.nnet import conv
-# use optimizer_including=cudnn flag when running the jobs to enforce using cuDNN
 from collections import OrderedDict
 import cPickle as pickle
 import time
@@ -20,8 +19,7 @@ from RCN.preprocessing.tools import (EOF, padRatio_to_pixels,
                                             discretise_y, mask_padded_kpts,
                                             get_bound_mask, get_one_hot_map)
 from RCN.preprocessing.local_contrast_normalization import lcn
-from RCN.utils.convnet_tools import (create_TCDCN_obejct,
-                                            get_one_hot_predictions)
+from RCN.utils.convnet_tools import create_TCDCN_obejct, get_one_hot_predictions
 from RCN.models.layers import (ConvPoolLayer, Softmax)
 import os
 
@@ -681,6 +679,7 @@ class Train(object):
             sys.stderr.write("loading params of coarse_fine_Net from %s \n" %param_path_cfNet)
             tcdcn_cfNet, params_cfNet = create_TCDCN_obejct(param_path_cfNet)
             tcdcn_cfNet.load_params(param_path_cfNet)
+            sys.stderr.write("done with loading params \n")
             self.tcdcn_cfNet = tcdcn_cfNet
             self.params_cfNet = params_cfNet
         else:
@@ -937,13 +936,20 @@ class Train(object):
 
                 # at test time we consider the one-hot output of
                 # the RCN and pass it to the denoising model
-                one_hot_maps_4D = get_one_hot_predictions(self.tcdcn_cfNet,
-                                                          x, self.dim)
 
                 if self.tcdcn_cfNet:
+                    one_hot_maps_4D = get_one_hot_predictions(self.tcdcn_cfNet, x, self.dim)
                     # in this case, we are evaluating on the cfNet model's output, so consider all points.
                     mask_kpts = np.ones_like(y_kpt_norm)
                 else:
+                    source_points = get_source_points(self.tcdcn_cfNet, x, y_kpt_norm, self.num_model_kpts)
+                    # getting the one-hot matrices of the kpt_locations + adding noise to it and
+                    # getting mask for the noised locations
+                    # one_hot_maps_4D is of shape (#batch, #kpts, #dim, #dim)
+                    # mask is of shape (#batch, #kpts)
+                    one_hot_maps_4D, y_mask_jittered = get_and_noise_one_hot_maps(source_points, self.dim,
+                                                                                  self.nMaps_shuffled,
+                                                                                  self.rng, self.dropout_kpts)
                     # in this case we are dealing with the true keypoints, so only consider the jittered ones
                     # It gets the masks where each one value indicates
                     # a jittered kpt that is not also on the border.
