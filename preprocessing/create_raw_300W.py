@@ -3,34 +3,35 @@ This module creates the 68 keypoint 300W datasets (as pickle files) by using the
 RGB format but with a reduced_size.
 
 #################################
+
 Here is the instruction to create 300W datasets:
 
-In order to use it download Helen, LFPW, AFW and IBUG subsets from:
+1 - Download Helen, LFPW, AFW and IBUG datasets from:
 http://ibug.doc.ic.ac.uk/resources/facial-point-annotations/
 
-Once unzipped, the helen and lfpw have two subdirectories, 'testset' and 'trainset'.
+2 - Once unzipped, the helen and lfpw have two subdirectories, 'testset' and 'trainset'.
 Rename them to 'X_testset' and 'X_trainset', for each dataset X.
 
-Create one directory named 'Train_set' and put unzipped afw, helen_trainset
+3 - Create one directory named 'Train_set' and put unzipped 'afw', 'helen_trainset'
 and 'lfpw_trainset' directories into it (as three sub-directories).
 
-Create another directory named 'Test_set' and put unzipped ibug, helen_testset and lfpw_testset
+4 - Create another directory named 'Test_set' and put unzipped 'ibug', 'helen_testset' and 'lfpw_testset'
 into it (as three sub-directories).
 
-Put Train_set and Test_set directories into one direcotory (i.e. 300W) and pass
+5 - Put Train_set and Test_set directories into one direcotory (i.e. 300W) and pass
 the complete path to it to 'src_dir' when calling this module.
 
-Create another direcotry as the place where
-the pickles files will be put there and pass
-the complete path to it to 'dest_dir' when calling this module.
+6 - Call create_raw_300W.py module by passing complete path to 'src_dir' and 'dest_dir' arguments:
+python create_raw_300W.py --src_dir=/complete/path/to/300W/folder --dest_dir=/complete/path/to/RCN/datasets
 
-Here is how to call this module:
-python create_raw_300W.py --src_dir=/complete/path/to/300W/folder --dest_dir=/complete/path/to/where/pickles/will/be/put
+**Note: dest_dir is the location where the dataset will be created. It should be finally put in RCN/datasets directory
+of the repo
 
-It will create 300W_test_160by160.pickle and 300W_train_160by160.pickle files in the given dest_dir path.
+This module will create 300W_test_160by160.pickle and 300W_train_160by160.pickle files in the given dest_dir path.
 
 **Note: follow the instructions here for citation if you use 300W dataset:
 http://ibug.doc.ic.ac.uk/resources/facial-point-annotations/
+
 #################################
 
 Note: This module creates a dataset with 3148 train images (afw, Helen, lfpw), and 689 test images (135 ibug, 330 Helen, 224 lfpw)

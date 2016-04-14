@@ -5,22 +5,21 @@ This is one of the test sets with 5 keypoints. The other test set with 5 keypoin
 another module. (see create_raw_afw.py in the same directory for how to create it).
  
 #################################
+
 Here is the instruction to create 5-keypoint MTFL dataset:
 
-Download the images from:
+1 - Download the images from:
 http://mmlab.ie.cuhk.edu.hk/projects/TCDCN/data/MTFL.zip
 
-Unzip the folder and pass
-the complete path to it to 'src_dir' when calling this module.
+2 - Unzip the folder and pass the complete path to it to 'src_dir' when calling create_raw_MTFL.py module.
 
-Create another direcotry as the place where
-the pickles files will be put there and pass
-the complete path to it to 'dest_dir' when calling this module.
+3 - Call create_raw_MTFL.py by passing complete path to 'src_dir' and 'dest_dir' arguments:
+python create_raw_MTFL.py  --src_dir=/complete/path/to/MTFL/unzipped/folder --dest_dir=/complete/path/to/RCN/datasets
 
-Here is how to call this module:
-python create_raw_MTFL.py  --src_dir=/complete/path/to/MTFL/unzipped/folder --dest_dir=/complete/path/to/where/pickles/will/be/put
+**Note: dest_dir is the location where the dataset will be created. It should be finally put in RCN/datasets directory
+of the repo
 
-It will create MTFL_test_160by160.pickle and MTFL_train_160by160.pickle in the given dest_dir path.
+This module will create MTFL_test_160by160.pickle and MTFL_train_160by160.pickle in the given dest_dir path.
 
 **Note: follow the instructions here for citation if you use MTFL dataset:
 http://mmlab.ie.cuhk.edu.hk/projects/TCDCN.html

@@ -630,11 +630,11 @@ if __name__ == '__main__':
     parser.add_argument('--num_model_kpts', help='the number of cfNet keypoints to be used when building the structured model', type=int, default=68)
     parser.add_argument('--conv_size', type=int, help='conv_size of the strucutured kpt model', default=45)
     parser.add_argument('--weight_per_pixel', help='indicates whether to use a per-pixel weight (in each branch for each kpt)\
-                           in mscale_conv model or not', action='store_true', default=False)
+                           in SumNet model or not', action='store_true', default=False)
     parser.add_argument('--conv_per_kpt', help='indicates whether to use a convnet on all branch feature maps per keypoint\
-                           in mscale_conv model or not', action='store_true', default=False)
+                           in SumNet model or not', action='store_true', default=False)
     parser.add_argument('--linear_conv_per_kpt', help='indicates whether to use a convnet on all branch feature maps per keypoint\
-                           in mscale_conv model or not, in this case the final convolution in each branch is linear', action='store_true', default=False)
+                           in SumNet model or not, in this case the final convolution in each branch is linear', action='store_true', default=False)
     parser.add_argument('--no_fine_tune_model', help='indicates whether to fine_tune the parameters of the two models (CakeNet and denoising)\
                            in the joint model', action='store_true', default=False)
     parser.add_argument('--only_fine_tune_struc', help='if used indicates to only finetune the structured model', action='store_true', default=False)
@@ -779,7 +779,7 @@ if __name__ == '__main__':
     br_mask = map(int, br_mask)
     assert all(x==0 or x==1 for x in br_mask)
     coarse_mask_branch = np.array(br_mask)
-    print "The coarse mask_branch for mscale_conv is %s" %(coarse_mask_branch,)
+    print "The coarse mask_branch in SumNet_MTFL model is %s" %(coarse_mask_branch,)
 
     bilinear = args.bilinear
     print "bilinear is %s" %(bilinear, )
@@ -826,7 +826,7 @@ if __name__ == '__main__':
     print "large_F_filter for 300W model is %s" %(large_F_filter)
 
     load_no_output_params = args.load_no_output_params
-    print "load_no_output_params for 300W mdoel is %s" %(load_no_output_params)
+    print "load_no_output_params for 300W model is %s" %(load_no_output_params)
 
     save_no_output_params = args.save_no_output_params
     print "save_no_output_params is %s" %(save_no_output_params)

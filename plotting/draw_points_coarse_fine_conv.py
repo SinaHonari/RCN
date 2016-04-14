@@ -1,7 +1,7 @@
 # This module takes the weights of a convnet and
 # sets the convnet weights to them, then it gives the convnet
-# some sample images (here from the valid set) and plots the
-# model's predicted keypoints on the images.
+# some sample images and plots the
+# model's predicted keypoints on those images.
 #
 # Note: This module draws the keypoints on the downsampled 80*80 rgb images
 
@@ -11,7 +11,7 @@ from RCN.preprocessing.tools import shuffleData, splitData
 from RCN.preprocessing.preprocess import preprocess_iter, preprocess_once
 from RCN.preprocessing.tools import EOF, padRatio_to_pixels
 from RCN.utils.convnet_tools import (create_TCDCN_obejct, get_error_kpt_avg,
-                                            get_one_hot_predictions)
+                                     get_one_hot_predictions)
 import RCN
 from collections import OrderedDict
 import argparse
@@ -267,13 +267,16 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         tcdcn_cfNet.load_params(cfNet_path)
     cfNet_model = (tcdcn_cfNet, params_cfNet)
 
-    if params['mask_MTFL'] == 1.0:
-        dataSet = 'MTFL'
-        # number of keypoints
-        num_kpt = 5
-    else:
+    if params['paral_conv'] in [2, 5, 6] or params['denoise_conv'] in [1, 2]:
+        params['mask_MTFL'] = 0
+        params['mask_300W'] = 1
         dataSet = '300W'
         num_kpt = 68
+    elif params['paral_conv'] in [1, 3, 4]:
+        params['mask_300W'] = 0
+        params['mask_MTFL'] = 1
+        dataSet = 'MTFL'
+        num_kpt = 5
 
     ##############################################
     # getting the 1st bounding box test set data #
@@ -323,8 +326,8 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         sets['all_sets']['Y'] = append_orderedDict(sets['all_sets']['Y'])
         set_names = ['all_sets']
     else:
-        set_names = Test[dataSet].keys()
-        # set_names = sets.keys()
+        #set_names = Test[dataSet].keys()
+        set_names = sets.keys()
 
     for sub_set in set_names:
         set_x = sets[sub_set]['X']
@@ -336,7 +339,7 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
 
         if max_errors:
             indices, error_kpt_avg_all = eval_test_set(tcdcn, params, set_x, set_y, set,
-                                                sample_num, dataSet, cfNet_model)
+                                                       sample_num, dataSet, cfNet_model)
             set_x_indx, set_y_indx = get_indices(set_x_cp, set_y_cp, indices)
         elif indices_given:
             set_x_indx, set_y_indx = get_indices(set_x_cp, set_y_cp, sets[sub_set]['indices'])
@@ -408,31 +411,22 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
                     bound_mask = set_y2['bound_mask'][index * batch_size: (index + 1) * batch_size]
                     pad_ratio = set_y2['pad_ratio'][index * batch_size: (index + 1) * batch_size]
                     border_pixel = padRatio_to_pixels(pad_ratio, set_x2.shape[1])
-                    if params['denoise_conv'] in [2, 2.5, 5]:
+                    if params['denoise_conv'] == 1:
                         one_hot_Maps = get_one_hot_predictions(tcdcn_cfNet, x_batch, params['target_dim'])
-                        if params['denoise_conv'] in [2, 2.5]:
-                            if mult_probs:
-                                print "mult_probs code is not complete yet"
-                            else:
-                                kpt_conv_batch = tcdcn.get_keypoints_MTFL(one_hot_Maps, bound_mask, border_pixel, dropout=0)
-                        elif params['denoise_conv'] == 5:
-                            pre_softmax_maps = tcdcn_cfNet.get_pre_softmax(x_batch, dropout=0)
-                            kpt_conv_batch = tcdcn.get_keypoints_MTFL(one_hot_Maps, pre_softmax_maps,
-                                                                      bound_mask, border_pixel, dropout=0)
+                        if mult_probs:
+                            print "mult_probs code is not complete yet"
+                        else:
+                            kpt_conv_batch = tcdcn.get_keypoints_MTFL(one_hot_Maps, bound_mask, border_pixel, dropout=0)
                     else: # using coarse_fine_conv models
                         kpt_conv_batch = tcdcn.get_keypoints_MTFL(x_batch, bound_mask, border_pixel, dropout=0)
 
                 else: # train and valid sets
-                    if params['denoise_conv'] in [2, 2.5, 5]:
+                    if params['denoise_conv'] == 1:
                         one_hot_Maps = get_one_hot_predictions(tcdcn_cfNet, x_batch, params['target_dim'])
-                        if params['denoise_conv'] in [2, 2.5]:
-                            if mult_probs:
-                                print "mult_probs code is not complete yet"
-                            else:
-                                kpt_conv_batch = tcdcn_cfNet.get_keypoints_MTFL_train(one_hot_Maps, dropout=0)
-                        elif params['denoise_conv'] == 5:
-                            pre_softmax_maps = tcdcn.get_pre_softmax(x_batch, dropout=0)
-                            kpt_conv_batch = tcdcn.get_keypoints_MTFL(one_hot_Maps, pre_softmax_maps, dropout=0)
+                        if mult_probs:
+                            print "mult_probs code is not complete yet"
+                        else:
+                            kpt_conv_batch = tcdcn.get_keypoints_MTFL_train(one_hot_Maps, dropout=0)
                     else: # using coarse_fine_conv models
                         kpt_conv_batch = tcdcn.get_keypoints_MTFL_train(x_batch, dropout=0)
 
@@ -531,7 +525,6 @@ if __name__ == "__main__":
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
-    #draw_points_preprocessed()
     draw_points_raw(out_path, annotate_kpts=False, max_errors=max_errors, sample_num=sample_num,
                     high_res=high_res, plot_colored_kpt=plot_colored_kpt, indices_given=indices_given,
                     cfNet_path=cfNet_path, mult_probs=mult_probs, merge_sets=merge_sets,
