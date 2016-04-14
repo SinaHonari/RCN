@@ -1,8 +1,6 @@
 # This module takes the weights of a keypoint detection convnet and
 # sets the convnet weights to them, then it passes to the convnet
 # the images from the sets and gets the error_kpt_avg on them.
-#
-# Note: This module draws the keypoints on the downsampled 80*80 rgb images
 
 import numpy as np
 import sys
@@ -71,13 +69,16 @@ def eval_test_sets(pkl_param_file, cfNet_path, mult_probs, use_batch_size_1,
         tcdcn_cfNet.load_params(cfNet_path)
     cfNet_model = (tcdcn_cfNet, params_cfNet)
 
-    if params['mask_MTFL'] == 1.0:
-        dataSet = 'MTFL'
-        # number of keypoints
-        num_kpt = 5
-    else:
+    if params['paral_conv'] in [2, 5, 6] or params['denoise_conv'] in [1, 2]:
+        params['mask_MTFL'] = 0
+        params['mask_300W'] = 1
         dataSet = '300W'
         num_kpt = 68
+    elif params['paral_conv'] in [1, 3, 4]:
+        params['mask_300W'] = 0
+        params['mask_MTFL'] = 1
+        dataSet = 'MTFL'
+        num_kpt = 5
 
     sets = get_data(**params)
     Train, Valid, Test = sets
@@ -164,15 +165,6 @@ if __name__ == "__main__":
     parser.add_argument('--rotation_file', type=str, help='the complete path to the pickle file that contains rotation degree for each image', default="")
     parser.add_argument('--mult_probs', help='indicates to multiply the probabilities of two models', action='store_true', default=False)
     parser.add_argument('--use_batch_size_1', help='indicates to use only batch size one to get the errors', action='store_true', default=False)
-    parser.add_argument('--joint_iterations', type=int, help='the number of iteration of the joint model in the multiplication case', default=1)
-    parser.add_argument('--struct_iterations', type=int, help='the number of iteration of the\
-                         structured model in the multiplication case of the joint model', default=0)
-    parser.add_argument('--use_previous_iter_pre_softmax', help='indicates to\
-                         use the sum of struct and cfNet of the previous iteration\
-                         of the joint model as the cfNet pre_softmax maps that will be\
-                         summed with the structured pre_softmax maps\
-                         in the next iteration of the joint model when multiplying the probs.\
-                         of the joint model', action='store_true', default=False)
     args = parser.parse_args()
     # tha path to the folder that contains MTFL datasets
     pkl_param_file = args.path
@@ -180,9 +172,6 @@ if __name__ == "__main__":
     cfNet_path = args.cfNet_path
     mult_probs = args.mult_probs
     use_batch_size_1 = args.use_batch_size_1
-    joint_iterations = args.joint_iterations
-    struct_iterations = args.struct_iterations
-    use_previous_iter_pre_softmax = args.use_previous_iter_pre_softmax
 
     # getting the name of pkl_param_file
     out_parts = pkl_param_file.split('/')
@@ -190,20 +179,17 @@ if __name__ == "__main__":
     assert parent_dir is not None
 
     out_dir_name = 'error_on_sets'
-    if joint_iterations > 1:
-        out_dir_name += '_joint_iterations_%s' %(joint_iterations)
-    if struct_iterations > 0:
-        out_dir_name += '_struct_iterations_%s' %(struct_iterations)
-    if use_previous_iter_pre_softmax:
-        out_dir_name += '_previous_pre_softmax'
     base_out_path = "%s/%s" %(parent_dir, out_dir_name)
     if not os.path.exists(base_out_path):
         os.makedirs(base_out_path)
-    out_path = base_out_path
+
+    subdir_name = out_parts[-1].split('shared_conv_params_')[1]
+    subdir_name = subdir_name.split('.pickle')[0]
+    subdir_out_path = "%s/%s" %(base_out_path, subdir_name)
+    if not os.path.exists(subdir_out_path):
+        os.makedirs(subdir_out_path)
+    out_path = subdir_out_path
 
     out_path_str = "%s/test_set_results.txt" %(out_path)
     out_str = open(out_path_str,'w')
-    eval_test_sets(pkl_param_file, cfNet_path, mult_probs, use_batch_size_1,
-                   joint_iterations=joint_iterations,
-                   struct_iterations=struct_iterations,
-                   use_previous_iter_pre_softmax=use_previous_iter_pre_softmax)
+    eval_test_sets(pkl_param_file, cfNet_path, mult_probs, use_batch_size_1)

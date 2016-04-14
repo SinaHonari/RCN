@@ -1,12 +1,9 @@
 # This module takes the weights of a convnet and
 # sets the convnet weights to them, then it gives the convnet
-# some sample images (here from the valid set) and plots the
-# model's predicted keypoints on the images.
+# some sample images and plots the
+# model's predicted keypoints on those images.
 #
 # Note: This module draws the keypoints on the downsampled 80*80 rgb images
-#
-# inputs:
-# sys.argv[1]: the complete path to the pickle file whose weights are assigned to the convnet
 
 import numpy as np
 from RCN.models.create_procs import get_data
@@ -98,8 +95,6 @@ def drawpoints(img, kpt_conv, kpt_true, plot_colored_kpt, magnify=False):
 
         for kpt in kpt_true:
             # plotting the estimated keypoints in green
-            #cv2.circle(img,(int(kpt[0]),int(kpt[1])), 2, (0,255,0), -1)
-            #img[kpt[1], kpt[0]] = (0,255,0)
             if magnify:
                 cv2.circle(img,(int(kpt[0]),int(kpt[1])), 3, (0,255,0), -1)
             else:
@@ -108,7 +103,6 @@ def drawpoints(img, kpt_conv, kpt_true, plot_colored_kpt, magnify=False):
 
         for kpt in kpt_conv:
             # plotting the estimated keypoints in blue
-            #img[kpt[1], kpt[0]] = (0,0,255)
             if magnify:
                 cv2.circle(img,(int(kpt[0]),int(kpt[1])), 3, (0,0,255), -1)
             else:
@@ -193,17 +187,6 @@ def save_error_results(array, set_name, sample_num):
 
 def eval_test_set(tcdcn, params, set_x, set_y, set_name, sample_num, dataSet, cfNet_model):
     rng_seed  = np.random.RandomState(0)
-    """
-    if 'jitter_mul' in params.keys():
-        scale_mul = params['jitter_mul']
-        translate_mul = params['jitter_mul']
-    else:
-        scale_mul = params['scale_mul']
-        translate_mul = params['translate_mul']
-    if 'test' in set_name:
-        scale_mul = 0.0
-        translate_mul = 0.0
-    """
     scale_mul = 0.0
     translate_mul = 0.0
 
@@ -246,20 +229,6 @@ def append_orderedDict(list_of_dict):
     keys that exist in all of them.
     """
     all_sets = OrderedDict()
-    """
-    for key in list_of_dict[0].keys():
-        flag = True
-        # check if the key exists in all lists
-        for mylist in list_of_dict[1:]:
-            if key not in mylist.keys():
-                flag = False
-                break;
-        if flag:
-        # add all elements in the key
-        all_sets[key] = []
-        for mylist in list_of_dict:
-            all_sets[key].extend(mylist[key])
-    """
     for key in list_of_dict[0].keys():
         all_sets[key] = list_of_dict[0][key]
         for mylist in list_of_dict[1:]:
@@ -274,8 +243,7 @@ def append_orderedDict(list_of_dict):
     return all_sets
 
 def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True, sample_num=20,
-                    plot_colored_kpt=False, indices_given=False, cfNet_path="", mult_probs=False,
-                    merge_sets=False, pickle_path=""):
+                    plot_colored_kpt=False, indices_given=False, merge_sets=False, pickle_path=""):
     """
     This method draw points on the test set, when there are two steps for face-detection and
     downsampling. So, when the dataset is created, a face-detection is done and the data is downsampled to
@@ -298,23 +266,18 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
     tcdcn.load_params(pkl_param_file)
 
     tcdcn_cfNet, params_cfNet = None, None
-    if cfNet_path != "":
-        print "loading params of cfNet"
-        tcdcn_cfNet, params_cfNet = create_TCDCN_obejct(cfNet_path)
-        tcdcn_cfNet.load_params(cfNet_path)
     cfNet_model = (tcdcn_cfNet, params_cfNet)
 
-    if params['mask_MTFL'] == 1.0:
-        dataSet = 'MTFL'
-        # number of keypoints
-        num_kpt = 5
-    else:
+    if params['paral_conv'] in [2, 5, 6] or params['denoise_conv'] in [1, 2]:
+        params['mask_MTFL'] = 0
+        params['mask_300W'] = 1
         dataSet = '300W'
         num_kpt = 68
-
-    # setting the number of image sampels to evalute the convnet on
-    #sample_num = 6
-    #sample_num = 20
+    elif params['paral_conv'] in [1, 3, 4]:
+        params['mask_300W'] = 0
+        params['mask_MTFL'] = 1
+        dataSet = 'MTFL'
+        num_kpt = 5
 
     ##############################################
     # getting the 1st bounding box test set data #
@@ -354,18 +317,13 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
             sets[test_set]['name'] = '3_test_%s' %(test_set)
             sets[test_set]['indices'] = []
 
-    if rotation_file:
-        with open(rotation_file, 'rb') as fp:
-            rotation_lists = pickle.load(fp)
-    rotation_set = None
-
     if merge_sets:
         sets['all_sets']['X'] = np.array(sets['all_sets']['X'])
         sets['all_sets']['Y'] = append_orderedDict(sets['all_sets']['Y'])
         set_names = ['all_sets']
     else:
-        set_names = Test[dataSet].keys()
-        # set_names = sets.keys()
+        # set_names = Test[dataSet].keys()
+        set_names = sets.keys()
 
     for sub_set in set_names:
         set_x = sets[sub_set]['X']
@@ -377,7 +335,7 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
 
         if max_errors:
             indices, error_kpt_avg_all = eval_test_set(tcdcn, params, set_x, set_y, set,
-                                                sample_num, dataSet, cfNet_model)
+                                                       sample_num, dataSet, cfNet_model)
             set_x_indx, set_y_indx = get_indices(set_x_cp, set_y_cp, indices)
         elif indices_given:
             set_x_indx, set_y_indx = get_indices(set_x_cp, set_y_cp, sets[sub_set]['indices'])
@@ -392,27 +350,11 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         ##############################################
         # preprocessing data
         rng_seed  = np.random.RandomState(0)
-        """
-        if 'jitter_mul' in params.keys():
-            scale_mul = params['jitter_mul']
-            translate_mul = params['jitter_mul']
-        else:
-            scale_mul = params['scale_mul']
-            translate_mul = params['translate_mul']
-        if 'test' in set:
-            scale_mul = 0.0
-            translate_mul = 0.0
-        """
 
         scale_mul = 0.0
         translate_mul = 0.0
         target_dim =  params['target_dim']
         td = (target_dim, target_dim)
-        if rotation_file and 'test' in set:
-            rotation_list = np.array(rotation_lists[sub_set])
-            rotation_set = rotation_list[indices]
-        else:
-            rotation_set = None
 
         set_y_orig = deepcopy(set_y_indx)
         set_x_orig = deepcopy(set_x_indx)
@@ -426,7 +368,7 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         # using preprocess_iter to prepare set_x2 and set_y2 as the model expect it
         set_x2, set_y2 = preprocess_iter(set_x2, set_y2, rng_seed, jitter=False, scale_mul=scale_mul,
                                          translate_mul=translate_mul, target_dim=td, sanity=False, dset=dataSet,
-                                         use_lcn=params['use_lcn'], rotation_set=rotation_set)
+                                         use_lcn=params['use_lcn'], rotation_set=None)
         # getting the keypoint results for the first images in the test set
 
         # face_rect has a vector of four values: rect_start_x, rect_start_y,
@@ -453,7 +395,7 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         for index in np.arange(num_batches):
             x_batch = set_x2[index * batch_size: (index + 1) * batch_size]
             assert dataSet == '300W'
-            assert params['denoise_conv'] == 4:
+            assert params['denoise_conv'] == 2:
             if 'test' in set:
                 pad_ratio = set_y2['pad_ratio'][index * batch_size: (index + 1) * batch_size]
                 border_pixel = padRatio_to_pixels(pad_ratio, set_x2.shape[1])
@@ -479,7 +421,7 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
             set_x_show, set_y_show = preprocess_once(set_x_cp, set_y_cp, dist_ratio=dist_ratio, gray_scale=False)
             set_x_show, _ = preprocess_iter(set_x_show, set_y_show, rng_seed, jitter=False, scale_mul=scale_mul,
                                             translate_mul=translate_mul, target_dim=td, sanity=False, dset=dataSet,
-                                            use_lcn=True, rotation_set=rotation_set)
+                                            use_lcn=True, rotation_set=None)
 
             if plot_colored_kpt:
                 high_res = True
@@ -517,15 +459,11 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plotting the model keypoint predictions on image faces.')
     parser.add_argument('--path', type=str, help='the complete path to the model\'s pickle file', required=True)
-    parser.add_argument('--cfNet_path', type=str, help='the complete path to the cfNet model\'s pickle file, whose output\
-                        is taken as the input to the model given by path', default="")
     parser.add_argument('--max_errors', action='store_true', default=False)
     parser.add_argument('--high_res', action='store_false', default=True)
     parser.add_argument('--sample_num', type=int, default=20)
-    parser.add_argument('--rotation_file', type=str, help='the complete path to the pickle file for rotations', default="")
     parser.add_argument('--plot_colored_kpt', action='store_true', default=False)
     parser.add_argument('--indices_given', action='store_true', default=False)
-    parser.add_argument('--mult_probs', help='indicates to multiply the probabilities of two models', action='store_true', default=False)
     parser.add_argument('--merge_sets', help='indicates whether to merge the test sets as one set or not', action='store_true', default=False)
     parser.add_argument('--pickle_path', type=str, help='the complete path to the indices', default="")
 
@@ -537,9 +475,6 @@ if __name__ == "__main__":
     pkl_param_file = args.path
     max_errors = args.max_errors
     sample_num = args.sample_num
-    rotation_file = args.rotation_file
-    cfNet_path = args.cfNet_path
-    mult_probs = args.mult_probs
     merge_sets = args.merge_sets
     pickle_path = args.pickle_path
 
@@ -573,8 +508,7 @@ if __name__ == "__main__":
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
-    #draw_points_preprocessed()
     draw_points_raw(out_path, annotate_kpts=False, max_errors=max_errors, sample_num=sample_num,
                     high_res=high_res, plot_colored_kpt=plot_colored_kpt, indices_given=indices_given,
-                    cfNet_path=cfNet_path, mult_probs=mult_probs, merge_sets=merge_sets,
+                    merge_sets=merge_sets,
                     pickle_path=pickle_path)

@@ -5,26 +5,25 @@ The other test set with 5 keypoints (AFLW) is created as part of MTFL dataset cr
 in the same directory for further instructions).
 
 #################################
+
 Here is the instruction to create 5-keypoint afw dataset:
 
-Download the images from:
+1 - Download the images from:
 https://www.ics.uci.edu/~xzhu/face/AFW.zip
 
-Unzip the folder and pass
-the complete path to it to 'src_dir' when calling this module.
+2 - Unzip the folder and pass the complete path to it to 'src_dir' when calling create_raw_MTFL.py module.
 
-Create another direcotry as the place where
-the pickles files will be put there and pass
-the complete path to it to 'dest_dir' when calling this module.
+3 - Call create_raw_MTFL.py module by passing complete path to 'src_dir' and 'dest_dir' arguments:
+python create_raw_afw.py  --src_dir=/complete/path/to/AFW/unzipped/folder --dest_dir=/complete/path/to/RCN/datasets
 
-Here is how to call this module:
+**Note: dest_dir is the location where the dataset will be created. It should be finally put in RCN/datasets directory
+of the repo
 
-python create_raw_afw.py  --src_dir=/complete/path/to/AFW/unzipped/folder --dest_dir=/complete/path/to/where/pickles/will/be/put
-
-It will create AFW_test_160by160.pickle in the given dest_dir path.
+This module will create AFW_test_160by160.pickle in the given dest_dir path.
 
 **Note: follow the instructions here for citation if you use AFW dataset:
 https://www.ics.uci.edu/~xzhu/face/
+
 #################################
 
 The process in this module is as follows:
