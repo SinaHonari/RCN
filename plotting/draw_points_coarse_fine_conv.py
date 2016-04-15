@@ -9,9 +9,10 @@ import numpy as np
 from RCN.models.create_procs import get_data
 from RCN.preprocessing.tools import shuffleData, splitData
 from RCN.preprocessing.preprocess import preprocess_iter, preprocess_once
-from RCN.preprocessing.tools import EOF, padRatio_to_pixels
+from RCN.preprocessing.tools import EOF, padRatio_to_pixels, discretise_y
 from RCN.utils.convnet_tools import (create_TCDCN_obejct, get_error_kpt_avg,
-                                     get_one_hot_predictions)
+                                     get_one_hot_predictions,
+                                     get_error_mult_probs_with_iteration)
 import RCN
 from collections import OrderedDict
 import argparse
@@ -397,6 +398,10 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
         # the keypoint positions in the normalized format
         set_kpt_norm = set_y2['kpt_norm']
 
+        dim = params['target_dim']
+        kpt_discret = discretise_y(set_kpt_norm, dim)
+        set_y2['kpt_norm'] = kpt_discret
+
         # setting batch_size to one to avoid getting different errors for different batch sizes
         batch_size = 1
         num_batches = int(np.ceil(set_x2.shape[0]/float(batch_size)))
@@ -414,7 +419,14 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
                     if params['denoise_conv'] == 1:
                         one_hot_Maps = get_one_hot_predictions(tcdcn_cfNet, x_batch, params['target_dim'])
                         if mult_probs:
-                            print "mult_probs code is not complete yet"
+                            ocular_dist = set_y2['ocular_dist'][index * batch_size: (index + 1) * batch_size]
+                            kpt_norm = set_y2['kpt_norm'][index * batch_size: (index + 1) * batch_size]
+                            kpt_conv_batch = get_error_mult_probs_with_iteration(tcdcn=tcdcn, tcdcn_cfNet=tcdcn_cfNet,
+                                                                                 x=x_batch, one_hot_Maps=one_hot_Maps,
+                                                                                 dim=params['target_dim'], y_kpt_MTFL=kpt_norm,
+                                                                                 y_kpt_ocular_dist=ocular_dist, num_kpts=num_kpt,
+                                                                                 border_pixel=border_pixel, set_kpts_to_border=True,
+                                                                                 return_predictions=True)
                         else:
                             kpt_conv_batch = tcdcn.get_keypoints_MTFL(one_hot_Maps, bound_mask, border_pixel, dropout=0)
                     else: # using coarse_fine_conv models
@@ -424,7 +436,14 @@ def draw_points_raw(out_path, annotate_kpts=True, high_res=True, max_errors=True
                     if params['denoise_conv'] == 1:
                         one_hot_Maps = get_one_hot_predictions(tcdcn_cfNet, x_batch, params['target_dim'])
                         if mult_probs:
-                            print "mult_probs code is not complete yet"
+                            ocular_dist = set_y2['ocular_dist'][index * batch_size: (index + 1) * batch_size]
+                            kpt_norm = set_y2['kpt_norm'][index * batch_size: (index + 1) * batch_size]
+                            kpt_conv_batch = get_error_mult_probs_with_iteration(tcdcn=tcdcn, tcdcn_cfNet=tcdcn_cfNet,
+                                                                                 x=x_batch, one_hot_Maps=one_hot_Maps,
+                                                                                 dim=params['target_dim'], y_kpt_MTFL=kpt_norm,
+                                                                                 y_kpt_ocular_dist=ocular_dist, num_kpts=num_kpt,
+                                                                                 border_pixel=None, set_kpts_to_border=False,
+                                                                                 return_predictions=True)
                         else:
                             kpt_conv_batch = tcdcn.get_keypoints_MTFL_train(one_hot_Maps, dropout=0)
                     else: # using coarse_fine_conv models
