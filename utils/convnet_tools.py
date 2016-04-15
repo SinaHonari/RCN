@@ -106,7 +106,8 @@ def get_error_mult_probs_with_iteration(tcdcn, tcdcn_cfNet, x,
                                         border_pixel, set_kpts_to_border=True,
                                         use_pre_softmax=False, joint_iterations=1,
                                         struct_iterations=0,
-                                        use_previous_iter_pre_softmax=False):
+                                        use_previous_iter_pre_softmax=False,
+                                        return_predictions=False):
 
     # getting pre_softmax maps of cfNet model
     pre_softmax_maps = tcdcn_cfNet.get_pre_softmax(x, dropout=0)
@@ -124,7 +125,7 @@ def get_error_mult_probs_with_iteration(tcdcn, tcdcn_cfNet, x,
             # and it is asked to denoise its predictions.
             one_hot_Maps = get_one_hot_predictions(tcdcn, one_hot_Maps, dim)
 
-        error_kpt_avg, predict_2D, sum_pre_softmax_maps = get_error_mult_probs(
+        error_kpt_avg, predict_2D, sum_pre_softmax_maps, kpt_pred = get_error_mult_probs(
                                  tcdcn=tcdcn, x=x, one_hot_Maps=one_hot_Maps,
                                  dim=dim, y_kpt_MTFL=y_kpt_MTFL,
                                  y_kpt_ocular_dist=y_kpt_ocular_dist,
@@ -142,7 +143,10 @@ def get_error_mult_probs_with_iteration(tcdcn, tcdcn_cfNet, x,
             # maps instead of the cfNet_softmax_maps
             pre_softmax_maps = sum_pre_softmax_maps
 
-    return error_kpt_avg
+    if return_predictions:
+        return kpt_pred
+    else:
+        return error_kpt_avg
 
 def get_error_mult_probs(tcdcn, x, one_hot_Maps, dim, y_kpt_MTFL,
                          y_kpt_ocular_dist, num_kpts, border_pixel,
@@ -194,8 +198,16 @@ def get_error_mult_probs(tcdcn, x, one_hot_Maps, dim, y_kpt_MTFL,
     # error_kpt_avg is of dim #batch
     error_kpt_avg = np.mean(error_kpt_each_norm, axis=1)
 
+    x_pred_300W = x_pred.reshape((-1, nkpts))
+    y_pred_300W = y_pred.reshape((-1, nkpts))
+    # interleaving x and y values
+    kpt_pred = np.zeros_like(x_pred_300W)
+    kpt_pred = np.tile(kpt_pred, (1,2))
+    kpt_pred[:, ::2] = x_pred_300W
+    kpt_pred[:,1::2] = y_pred_300W
+
     predict_2D = predict.reshape(bch, nkpts)
-    return error_kpt_avg, predict_2D, sum_softmax
+    return error_kpt_avg, predict_2D, sum_softmax, kpt_pred
 
 def make_2D_predictions_into_one_hot_4D(prediction_2D, dim):
     """
