@@ -52,7 +52,7 @@ http://mmlab.ie.cuhk.edu.hk/projects/TCDCN/data/MTFL.zip
 2 - Unzip the folder and pass the complete path to it to `--src_dir` when calling `create_raw_MTFL.py` module.
 
 3 - Call `create_raw_MTFL.py` by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
-```python
+```
 python create_raw_MTFL.py  --src_dir=/complete/path/to/MTFL/unzipped/folder --dest_dir=/complete/path/to/RCN/datasets
 ```
 
@@ -69,7 +69,7 @@ https://www.ics.uci.edu/~xzhu/face/AFW.zip
 2 - Unzip the folder and pass the complete path to it to `--src_dir` when calling `create_raw_MTFL.py` module.
 
 3 - Call `create_raw_MTFL.py` module by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
-```python
+```
 python create_raw_afw.py  --src_dir=/complete/path/to/AFW/unzipped/folder --dest_dir=/complete/path/to/RCN/datasets
 ```
 
@@ -94,7 +94,7 @@ into it (as three sub-directories).
 the complete path to it to `--src_dir` when calling this module.
 
 6 - Call `create_raw_300W.py` module by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
-```python
+```
 python create_raw_300W.py --src_dir=/complete/path/to/300W/folder --dest_dir=/complete/path/to/RCN/datasets
 ```
 
@@ -106,14 +106,14 @@ This module will create 300W_test_160by160.pickle and 300W_train_160by160.pickle
 `create_procs.py` module in RCN/models should be called with the right arguments to train each model. <br />
 The Theano flag `THEANO_FLAGS=floatX=float32,device=gpu,force_device=True` should be used right before the python command
 to train the model on gpu and set the type of shared varibles to float32: <br />
-```python
+```
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python create_procs.py <'flags'>
 ```
 
 Here is the set of flags to be used for training each model:
 
 ### Training SumNet for MTFL:
-```python
+```
 python create_procs.py --L2_coef=1e-06 --L2_coef_ful=0.0001 --L2_coef_out=1e-14 --file_suffix=SumNet_MTFL_test --num_epochs=3000  --paral_conv=1.0 --use_lcn --block_img
 ```
 
@@ -122,7 +122,7 @@ optional flags: `--use_res_2`, `--weight_per_pixel`
 ###########
 
 ### Training SumNet for 300W:
-```python
+```
 python create_procs.py --L2_coef=1e-08 --L2_coef_ful=1e-12 --file_suffix=SumNet_300W_test --num_epochs=3000 --paral_conv=2.0 --use_lcn --block_img 
 ```
 
@@ -131,7 +131,7 @@ optional flags: `--use_res_2`, `--weight_per_pixel`
 ###########
 
 ### Training RCN for MTFL:
-```python
+```
 python create_procs.py --L2_coef=1e-12 --L2_coef_ful=1e-08 --file_suffix=RCN_MTFL_test --num_epochs=3000 --paral_conv=3.0 --use_lcn --block_img
 ```
 
@@ -140,7 +140,7 @@ optional flags: `--use_res_2`, `--use_res_1`
 ###########
 
 ### Training RCN for MTFL with skip connections:
-```python
+```
 python create_procs.py --L2_coef=0.1 --L2_coef_ful=0.1 --file_suffix=RCN_MTFL_skip_test --num_epochs=3000  --paral_conv=4.0 --use_lcn --block_img
 ```
 
@@ -149,7 +149,7 @@ optional flags: `--use_res_2`, `--use_res_1`
 ###########
 
 ### Training RCN for 300W:
-```python
+```
 python create_procs.py --L2_coef=0.01 --L2_coef_ful=1e-12 --file_suffix=RCN_300W_test --num_epochs=3000 --paral_conv=5.0 --use_lcn --block_img
 ```
 
@@ -158,14 +158,14 @@ optional flags: `--use_res_2`, `--use_res_1`
 ###########
 
 ### Training RCN for 300W with skip connections:
-```python
+```
 python create_procs.py --L2_coef=1e-10 --L2_coef_ful=1e-08 --file_suffix=RCN_300W_skip_test  --num_epochs=3000 --paral_conv=6.0 --use_lcn --block_img
 ```
 
 ###########
 
 ### Training Denoising model for 300W:
-```python
+```
 python create_procs.py --L2_coef=1e-06 --file_suffix=Denoising_300W_test --num_epochs=100  --denoise_conv=1.0
 ```
 optional flags: `--nMaps_shuffled=35`, `--conv_size=45`
@@ -204,7 +204,7 @@ It then loads the model's params in the final epoch (here 100) and also loads th
 ## SumNet and RCN models:
 In order to draw keypoints using a trained SumNet or RCN model, run module `draw_points_coarse_fine_conv.py` in RCN/plotting directory. Assuming the model's name is 'test' and it is trained on 300W dataset, then the path to `shared_conv_params_test_300W.pickle` should be used as:
 
-```python
+```
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python draw_points_coarse_fine_conv.py --path=/path/to/shared_conv_params_test_300W.pickle
 ```
 
@@ -213,7 +213,7 @@ The images are saved in 'detected_kpts' directory, in the same place as the `sha
 ## Only Denoising model:
 In order to draw keypoints using a trained Denoising model on 300W dataset, you need to have a trained RCN_300W model. The following command uses the RCN_300W model (named 'RCN_test') to get one_hot_predictions and passes that to the Denoising_300W model (named 'Denoising_test') for its predictions. Note that this is not the joint model prediction, only the Denoising prediction:
 
-```python
+```
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python draw_points_coarse_fine_conv.py --path=/path/to/shared_conv_params_Denoising_test_300W.pickle --cfNet_path=/path/to/shared_conv_params_RCN_test_300W.pickle
 ```
 
@@ -227,7 +227,7 @@ Run the same command as in 'Only Denoising model' case and pass `--mult_probs` f
 ## SumNet and RCN models:
 Run `eval_test_set_coarse_fine_conv.py` in RCN/utils directory. Assuming the model's name is 'test' and it is trained on 300W dataset, then the path to `shared_conv_params_test_300W.pickle` should be used as:
 
-```python
+```
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python eval_test_set_coarse_fine_conv.py --pat
 h=/path/to/shared_conv_params_test_300W.pickle
 ```
@@ -236,7 +236,7 @@ h=/path/to/shared_conv_params_test_300W.pickle
 
 In order to draw keypoints using a trained Denoising model on 300W dataset, you need to have a trained RCN_300W model. The following command uses the RCN_300W model (named 'RCN_test') to get one_hot_predictions and passes that to the Denoising_300W model (named 'Denoising_test') for its predictions. Note that this is not the joint model prediction, only the Denoising prediction:
 
-```python
+```
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python eval_test_set_coarse_fine_conv.py --pat
 h=/path/to/shared_conv_params_Denoising_test_300W.pickle --cfNet_path=models_round_2/shared_conv_params_RCN_test_300W.pickle 
 ```
