@@ -114,16 +114,16 @@ Here is the set of flags to be used for training each model:
 
 ### Training SumNet for MTFL:
 ```
-python create_procs.py --L2_coef=1e-06 --L2_coef_ful=0.0001 --L2_coef_out=1e-14 --file_suffix=SumNet_MTFL_test --num_epochs=3000  --paral_conv=1.0 --use_lcn --block_img
+python create_procs.py --L2_coef=1e-10 --L2_coef_ful=1e-14 --L2_coef_out=1e-14 --file_suffix=SumNet_MTFL_test --num_epochs=4000  --paral_conv=1.0 --use_lcn --block_img --rotation=20 --use_res_2
 ```
 
-optional flags: `--use_res_2`, `--weight_per_pixel`
+optional flags: `--weight_per_pixel`
 
 ###########
 
 ### Training SumNet for 300W:
 ```
-python create_procs.py --L2_coef=1e-08 --L2_coef_ful=1e-12 --file_suffix=SumNet_300W_test --num_epochs=3000 --paral_conv=2.0 --use_lcn --block_img 
+python create_procs.py --L2_coef=1e-14 --L2_coef_ful=1e-06 --file_suffix=SumNet_300W_test --num_epochs=3000 --paral_conv=2.0 --use_lcn --block_img 
 ```
 
 optional flags: `--use_res_2`, `--weight_per_pixel`
@@ -132,25 +132,25 @@ optional flags: `--use_res_2`, `--weight_per_pixel`
 
 ### Training RCN for MTFL:
 ```
-python create_procs.py --L2_coef=1e-12 --L2_coef_ful=1e-08 --file_suffix=RCN_MTFL_test --num_epochs=3000 --paral_conv=3.0 --use_lcn --block_img
+python create_procs.py --L2_coef=1e-06 --L2_coef_ful=1e-12 --file_suffix=RCN_MTFL_test --num_epochs=4000 --paral_conv=3.0 --use_lcn --block_img --rotation=20 --use_res_2
 ```
 
-optional flags: `--use_res_2`, `--use_res_1`
+optional flags: `--use_res_1`
 
 ###########
 
 ### Training RCN for MTFL with skip connections:
 ```
-python create_procs.py --L2_coef=0.1 --L2_coef_ful=0.1 --file_suffix=RCN_MTFL_skip_test --num_epochs=3000  --paral_conv=4.0 --use_lcn --block_img
+python create_procs.py --L2_coef=1e-04 --L2_coef_ful=1e-04 --file_suffix=RCN_MTFL_skip_test --num_epochs=3000  --paral_conv=4.0 --use_lcn --block_img --rotation=20 --use_res_2
 ```
 
-optional flags: `--use_res_2`, `--use_res_1`
+optional flags: `--use_res_1`
 
 ###########
 
 ### Training RCN for 300W:
 ```
-python create_procs.py --L2_coef=0.01 --L2_coef_ful=1e-12 --file_suffix=RCN_300W_test --num_epochs=3000 --paral_conv=5.0 --use_lcn --block_img
+python create_procs.py --L2_coef=1e-12 --L2_coef_ful=1e-08 --file_suffix=RCN_300W_test --num_epochs=3000 --paral_conv=5.0 --use_lcn --block_img
 ```
 
 optional flags: `--use_res_2`, `--use_res_1`
@@ -159,7 +159,7 @@ optional flags: `--use_res_2`, `--use_res_1`
 
 ### Training RCN for 300W with skip connections:
 ```
-python create_procs.py --L2_coef=1e-10 --L2_coef_ful=1e-08 --file_suffix=RCN_300W_skip_test  --num_epochs=3000 --paral_conv=6.0 --use_lcn --block_img
+python create_procs.py --L2_coef=0.1 --L2_coef_ful=0.1 --file_suffix=RCN_300W_skip_test  --num_epochs=3000 --paral_conv=6.0 --use_lcn --block_img
 ```
 
 ###########
