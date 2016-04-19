@@ -16,10 +16,24 @@ The code for the [Recombinator Networks](http://arxiv.org/abs/1511.07356) paper.
 ------------------------------------
 
 # Citation
-If you use this code please cite: <br />
-Sina Honari, Jason Yosinski, Pascal Vincent, Christopher Pal, Recombinator Networks: Learning Coarse-to-Fine Feature Aggregation, in IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016.
 
-* The source code or its binary should not be used for any commercial product without prior knowledge of the authors.
+If you use this code please consider citing our paper:
+
+* Sina Honari, Jason Yosinski, Pascal Vincent, Christopher Pal. [Recombinator Networks: Learning Coarse-to-Fine Feature Aggregation](http://arxiv.org/pdf/1511.07356v2), in IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016.
+
+Bibtex:
+
+    @inproceedings{nguyen2015deep,
+    title={Recombinator Networks: Learning Coarse-to-Fine Feature Aggregation},
+    author={Honari, Sina and Yosinski, Jason and Vincent, Pascal and Pal, Christopher},
+    booktitle={Computer Vision and Pattern Recognition (CVPR), 2016 IEEE Conference on},
+    year={2016},
+    organization={IEEE}
+    }
+
+## License
+
+The source code or its binary should not be used for any commercial product without prior knowledge of the authors.
 
 ------------------------------------
 # Setting up and traning the models
