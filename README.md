@@ -39,12 +39,12 @@ The source code or its binary should not be used for any commercial product with
 # Setting up and traning the models
 ## Step 1: Installation
 
-1 - Install theano by following the instruction given here:
+1. Install theano by following the instruction given here:
 http://deeplearning.net/software/theano/install.html
 
-2 - Clone RCN repo
+2. Clone RCN repo
 
-3 - In ~/.bashrc add the parent directory of the clonded RCN repo to PYTHONPATH: <br />
+3. In ~/.bashrc add the parent directory of the clonded RCN repo to PYTHONPATH: <br />
 `export PYTHONPATH=/path/to/parent/dir/of/RCN:$PYTHONPATH`
 
 ------------------------------------
@@ -60,12 +60,12 @@ Run `create_raw_afw.py` and `create_raw_MTFL.py` modules in preprocessing direct
 Here is how to run these modules:
 
 #### Train and AFLW dataset creation:
-1 - Download the images from:
+1. Download the images from:
 http://mmlab.ie.cuhk.edu.hk/projects/TCDCN/data/MTFL.zip
 
-2 - Unzip the folder and pass the complete path to it to `--src_dir` when calling `create_raw_MTFL.py` module.
+2. Unzip the folder and pass the complete path to it to `--src_dir` when calling `create_raw_MTFL.py` module.
 
-3 - Call `create_raw_MTFL.py` by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
+3. Call `create_raw_MTFL.py` by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
 ```
 python create_raw_MTFL.py  --src_dir=/complete/path/to/MTFL/unzipped/folder --dest_dir=/complete/path/to/RCN/datasets
 ```
@@ -77,12 +77,12 @@ This module will create MTFL_test_160by160.pickle and MTFL_train_160by160.pickle
 
 #### AFW dataset creation:
 
-1 - Download the images from:
+1. Download the images from:
 https://www.ics.uci.edu/~xzhu/face/AFW.zip
 
-2 - Unzip the folder and pass the complete path to it to `--src_dir` when calling `create_raw_MTFL.py` module.
+2. Unzip the folder and pass the complete path to it to `--src_dir` when calling `create_raw_MTFL.py` module.
 
-3 - Call `create_raw_MTFL.py` module by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
+3. Call `create_raw_MTFL.py` module by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
 ```
 python create_raw_afw.py  --src_dir=/complete/path/to/AFW/unzipped/folder --dest_dir=/complete/path/to/RCN/datasets
 ```
@@ -92,22 +92,22 @@ This module will create AFW_test_160by160.pickle in the given dest_dir path.
 ### 2.2 - 300W dataset:
 Run create_raw_300W.py module in preprocessing directory as follows:
 
-1 - Download Helen, LFPW, AFW and IBUG datasets from:
+1. Download Helen, LFPW, AFW and IBUG datasets from:
 http://ibug.doc.ic.ac.uk/resources/facial-point-annotations/
 
-2 - Once unzipped, the helen and lfpw have two subdirectories, 'testset' and 'trainset'.
+2. Once unzipped, the helen and lfpw have two subdirectories, 'testset' and 'trainset'.
 Rename them to 'X_testset' and 'X_trainset', for each dataset X.
 
-3 - Create one directory named 'Train_set' and put unzipped 'afw', 'helen_trainset'
+3. Create one directory named 'Train_set' and put unzipped 'afw', 'helen_trainset'
 and 'lfpw_trainset' directories into it (as three sub-directories).
 
-4 - Create another directory named 'Test_set' and put unzipped 'ibug', 'helen_testset' and 'lfpw_testset'
+4. Create another directory named 'Test_set' and put unzipped 'ibug', 'helen_testset' and 'lfpw_testset'
 into it (as three sub-directories).
 
-5 - Put 'Train_set' and 'Test_set' directories into one direcotory (i.e. 300W) and pass
+5. Put 'Train_set' and 'Test_set' directories into one direcotory (i.e. 300W) and pass
 the complete path to it to `--src_dir` when calling this module.
 
-6 - Call `create_raw_300W.py` module by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
+6. Call `create_raw_300W.py` module by passing complete path to `--src_dir` and `--dest_dir` arguments: <br />
 ```
 python create_raw_300W.py --src_dir=/complete/path/to/300W/folder --dest_dir=/complete/path/to/RCN/datasets
 ```
