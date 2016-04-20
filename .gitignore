@@ -24,3 +24,6 @@ jobs_list_*
 *.snm
 *.toc
 *.vrb
+
+# ignore a .png file
+Images/300W_samples.png
