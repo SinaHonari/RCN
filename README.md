@@ -10,7 +10,7 @@ The code for the [Recombinator Networks](http://arxiv.org/abs/1511.07356) paper.
 </p>
 -----------------------------
 <p align="center">
-  <img src="Images/300W_samples.png" width="1100"/>
+  <img src="Images/300W_samples.jpg" width="1100"/>
 </p>
 
 ------------------------------------
