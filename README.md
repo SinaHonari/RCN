@@ -185,8 +185,8 @@ python create_procs.py --L2_coef=1e-06 --file_suffix=Denoising_300W_test --num_e
 optional flags: `--nMaps_shuffled=35`, `--conv_size=45`
 
 ### Optional flags:
-`--use_res_2`: indicates to go to resolution 2*2 as the coarsest resolution in the model. Default is 5*5. <br />
-`--use_res_1`: indicates to go to resolution 1*1 as the coarsest resolution in the model. Default is 5*5. <br />
+`--use_res_2`: indicates to go to resolution 2\*2 as the coarsest resolution in the model. Default is 5\*5. <br />
+`--use_res_1`: indicates to go to resolution 1\*1 as the coarsest resolution in the model. Default is 5\*5. <br />
 `--weight_per_pixel`: indicates in the SumNet model a weight per pixel to be used when summing 
 the upsampled feature maps of different branches (default is one weight per feature map). <br />
 `--batch_size`: the batch size for training model in each iteration. Default is 64. If the model is too big to be set on gpu, use smaller
@@ -203,7 +203,7 @@ generates the following 5 outputs in RCN/models/exp_shared_conv directory: <br /
 `adadelta_params_test.pickle` -> keeps parameters of adadelta training algorithm <br />
 `shared_conv_params_epoch_100_test_MTFL.pickle` -> keeps the parameters of the model in the final epoch <br />
 `shared_conv_params_test_MTFL.pickle` -> keeps the parameters of the model based on best validation set performance <br />
-`shared_conv_setting_test.pickle` -> keeps the flags used to run this model <br />
+`shared_conv_setting_test.pickle` -> keeps the flags (hyper-parameters) used to run this model <br />
 `epochs_log_test.pickle` -> keeps the logs of each epoch while training the model <br />
 
 Note: If you want to train a model in multiple sessions (rather than continuously), copy the output files to a directory and then use the same command as above for training the model with the addition of the following flag: <br />
@@ -222,7 +222,7 @@ In order to draw keypoints using a trained SumNet or RCN model, run module `draw
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python draw_points_coarse_fine_conv.py --path=/path/to/shared_conv_params_test_300W.pickle
 ```
 
-The images are saved in 'detected_kpts' directory, in the same place as the `shared_conv_params_test_300W.pickle` file.
+The images will be saved in '__detected_kpts__' directory, inside the directory where `shared_conv_params_test_300W.pickle` file exists.
 
 ## Only Denoising model:
 In order to draw keypoints using a trained Denoising model on 300W dataset, you need to have a trained RCN_300W model. The following command uses the RCN_300W model (named 'RCN_test') to get one_hot_predictions and passes that to the Denoising_300W model (named 'Denoising_test') for its predictions. Note that this is not the joint model prediction, only the Denoising prediction:
@@ -246,13 +246,15 @@ THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python eval_test_set_co
 h=/path/to/shared_conv_params_test_300W.pickle
 ```
 
+The error results will be saved in '__error_on_sets/test_set_results.txt__', inside the directory where `shared_conv_params_test_300W.pickle` file exists.
+
 ## Only Denoising model:
 
-In order to draw keypoints using a trained Denoising model on 300W dataset, you need to have a trained RCN_300W model. The following command uses the RCN_300W model (named 'RCN_test') to get one_hot_predictions and passes that to the Denoising_300W model (named 'Denoising_test') for its predictions. Note that this is not the joint model prediction, only the Denoising prediction:
+In order to get the prediction error using a trained Denoising model on 300W dataset, you need to have a trained RCN_300W model. The following command uses the RCN_300W model (named 'RCN_test') to get one_hot_predictions of the RCN model and passes that as the input to the Denoising_300W model (named 'Denoising_test') for its predictions. Note that this is not the joint model prediction, only the Denoising model prediction:
 
 ```
 THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python eval_test_set_coarse_fine_conv.py --pat
-h=/path/to/shared_conv_params_Denoising_test_300W.pickle --cfNet_path=models_round_2/shared_conv_params_RCN_test_300W.pickle 
+h=/path/to/shared_conv_params_Denoising_test_300W.pickle --cfNet_path=/path/to/shared_conv_params_RCN_test_300W.pickle 
 ```
 
 ## Joint RCN / Denoising model evaluation:
