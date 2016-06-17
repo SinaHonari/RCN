@@ -31,10 +31,6 @@ Bibtex:
     organization={IEEE}
     }
 
-## License
-
-The source code or its binary should not be used for any commercial product without prior knowledge of the authors.
-
 ------------------------------------
 # Setting up and traning the models
 ## Step 1: Installation
