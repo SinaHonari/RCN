@@ -23,7 +23,7 @@ If you use this code please consider citing our paper:
 
 Bibtex:
 
-    @inproceedings{nguyen2015deep,
+    @inproceedings{honari2016RCN,
     title={Recombinator Networks: Learning Coarse-to-Fine Feature Aggregation},
     author={Honari, Sina and Yosinski, Jason and Vincent, Pascal and Pal, Christopher},
     booktitle={Computer Vision and Pattern Recognition (CVPR), 2016 IEEE Conference on},
