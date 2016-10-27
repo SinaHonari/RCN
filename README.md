@@ -33,6 +33,11 @@ Bibtex:
 
 ------------------------------------
 # Setting up and traning the models
+
+## Dependencies:
+- The code is written in python 2.7
+- OpenCV library for python should be installed to use this repo.
+
 ## Step 1: Installation
 
 1. Install theano by following the instruction given here:
