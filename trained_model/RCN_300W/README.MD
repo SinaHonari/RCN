@@ -5,6 +5,7 @@ THEANO_FLAGS=floatX=float32,device=gpu,force_device=True python create_procs.py 
 --file_suffix=RCN --num_epochs=4000 --zero_non_pooled --learn_upsampling --paral_conv=5.0 --use_lcn --block_img
 --rotation=20
 ```
+**Note**: The trained model is **only** the RCN model and not the joint model.
 
 **Note**: To use this model on 300W dataset, make sure you have done steps 1 and 2.2 mentioned [here](https://github.com/SinaHonari/RCN/blob/master/README.md).
 
@@ -35,7 +36,7 @@ In order to use a trained RCN model to predict keypoints on random face images d
    ```
 
 ### 3- Write a module to get key-point locations 
-You can look at method get_kpts [here](https://github.com/SinaHonari/RCN/blob/master/plotting/draw_points_guide.py) as a proxy on how to do this.   
+You can look at method get_kpts [here](https://github.com/SinaHonari/RCN/blob/master/plotting/draw_points_guide.py#L9) as a proxy on how to do this.   
 (Note that this method may not work by default and it is written there simply as a guideline):
 
    3.1 - Create an object of the RCN model:

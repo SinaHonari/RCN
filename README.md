@@ -4,11 +4,23 @@ The code for the [Recombinator Networks](http://arxiv.org/abs/1511.07356) paper.
 <p align="center">
   <img src="Images/RCN.png" width="800"/>
 </p>
+
 -----------------------------
+
+**Basic diagram of the Recombinator Networks**: The model can be considered as an auto-encoder that after upsampling (in the decoder) concatenates features of the same dimentionality (from the encoder). The concatenation can be simplified by skip connections, where features are added instead of being concatenated. This gives even a simpler formulation of the model. The black arrows show normal layers in an auto-encoder and the red arrows show skip/concatenation connections.
+
+<p align="center">
+  <img src="Images/RCN_basic.jpg" width="800"/>
+</p>
+
+-----------------------------
+
 <p align="center">
   <img src="Images/Joint_model.png" width="800"/>
 </p>
+
 -----------------------------
+
 <p align="center">
   <img src="Images/300W_samples.jpg" width="1100"/>
 </p>
@@ -260,4 +272,13 @@ h=/path/to/shared_conv_params_Denoising_test_300W.pickle --cfNet_path=/path/to/s
 
 ## Joint RCN / Denoising model evaluation:
 Run the same command as in 'Only Denoising model' case and pass `--mult_probs` flag to `eval_test_set_coarse_fine_conv.py` module
+
+------------------------------------
+
+# Trained RCN model 
+A trained RCN model on 300W dataset is provided [here](https://github.com/SinaHonari/RCN/tree/master/trained_model/RCN_300W).  
+
+### Using RCN model on random face images:
+Follow the instructions [here](https://github.com/SinaHonari/RCN/blob/master/trained_model/RCN_300W/README.MD) on how to
+use a trained RCN model to predict key-points on random face images.
 
